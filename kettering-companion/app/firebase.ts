@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCzRS_YIvD7SUNL49C62IDkFfC0uHCox_Q",
+    apiKey: "AIzaSyCzRS_YIvD7SUNL49C62IDkFfC0uHCox_Q", //This will be taken out later, hardcoding is BAD
     authDomain: "kettering-connect.firebaseapp.com",
     projectId: "kettering-connect",
     storageBucket: "kettering-connect.firebasestorage.app",
