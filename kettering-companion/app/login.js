@@ -1,9 +1,9 @@
-import React, { useState, useContext, useRef, useEffect, use } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Animated, Easing, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AuthContext } from '../context/AuthProvider';
 import { auth } from "./firebase";
-import { AuthContext } from '../context/AuthProvider'
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function AuthScreen() {
     const [isLogin, setIsLogin] = useState(true);
@@ -51,7 +51,7 @@ export default function AuthScreen() {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 setUser(userCredential.user);
             }
-            router.replace('/(tabs');
+            router.replace('/(tabs)/explore');
         } catch (error) {
             alert(error.message);
         }
