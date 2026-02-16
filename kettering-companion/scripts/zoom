@@ -1,0 +1,10 @@
+import { createContext } from "react";
+
+<canvas id = "canvas"></canvas>
+const App = () => {
+    const [panoffset, setPanOffSet] = useState({x: 0, y: 0});
+    useContext.translate(panoffset.x, panoffset.y);
+    createContext.save();
+    createContext.restore();
+    
+};
