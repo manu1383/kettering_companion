@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../context/AuthProvider';
@@ -54,6 +54,20 @@ export default function AuthScreen() {
             router.replace('/(tabs)/explore');
         } catch (error) {
             alert(error.message);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            alert('Please enter your email to reset password.');
+            return;
+        }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert('Password reset email sent! Check your inbox.');
+        } catch (error) {
+            console.log('Error sending password reset email:', error);
+            alert('Failed to send password reset email. Please try again.');
         }
     };
 
@@ -129,12 +143,12 @@ export default function AuthScreen() {
             <Text style={styles.buttonText}>{isLogin ? "Log In" : "Sign Up"}</Text>
             </TouchableOpacity>
         </Animated.View>
-
-        <Text style={styles.footer}>
-            {isLogin
-            ? "Welcome back! Enter your credentials to continue."
-            : "Create a new account to get started."}
-        </Text>
+        {isLogin && (
+            <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.8}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+        )}
+        
     </KeyboardAvoidingView>
   );
 }
@@ -229,4 +243,10 @@ const styles = StyleSheet.create({
     color: "#555",
     textAlign: "center",
   },
+  forgotPasswordText: {
+    color: "#4BA3C7",
+    fontWeight: "600",
+    textAlign: "right",
+    marginBottom: 15,
+    marginTop: 15,}
 });
