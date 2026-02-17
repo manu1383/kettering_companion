@@ -12,6 +12,8 @@ export default function AuthScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setloading] = useState(false);
+    const [error, setError] = useState(null);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const formAnim = useRef(new Animated.Value(0)).current;
@@ -34,26 +36,45 @@ export default function AuthScreen() {
 
     const handleAuth = async () => {
         if (!email || !password) {
-            alert('Please enter both email and password.');
+            setError('Please enter both email and password.');
             return;
         }
         
         if (!isLogin && password !== confirmPassword) {
-            alert('Passwords do not match.');
+            setError('Passwords do not match.');
             return;
         }
 
         try {
-            if (isLogin) {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                setUser(userCredential.user);
-            } else {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                setUser(userCredential.user);
-            }
+
+            setloading(true);
+            
+            const userCredential = isLogin
+                ? await signInWithEmailAndPassword(auth, email, password)
+                : await createUserWithEmailAndPassword(auth, email, password);
+
+            setUser(userCredential.user);
             router.replace('/(tabs)/explore');
+
         } catch (error) {
-            alert(error.message);
+            switch(error.message){
+                case 'auth/user-not-found':
+                    setError('No user found with this email.');
+                    break;
+                case 'auth/wrong-password':
+                    setError('Incorrect password.');
+                    break;
+                case 'auth/email-already-in-use':
+                    setError('This email is already in use.');
+                    break;
+                case 'auth/invalid-email':
+                    setError('Invalid email address.');
+                    break;   
+                default:
+                    setError('An error occurred. Please try again.');
+            }
+        } finally {
+            setloading(false);
         }
     };
 
@@ -124,9 +145,10 @@ export default function AuthScreen() {
                 />
             </>
             )}
+            {error ? (<text style={styles.errorText}>{error}</text>) : null}
 
             <TouchableOpacity style={styles.button} onPress={handleAuth} activeOpacity={0.8}>
-            <Text style={styles.buttonText}>{isLogin ? "Log In" : "Sign Up"}</Text>
+            <Text style={styles.buttonText}>{loading ? 'Please wait...' :isLogin ? "Log In" : "Sign Up"}</Text>
             </TouchableOpacity>
         </Animated.View>
 
@@ -228,5 +250,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#555",
     textAlign: "center",
+  },
+  errorText: {
+    fontFamily: 'arial',
+    color: '#D64545',
+    marginBottom: 12,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
