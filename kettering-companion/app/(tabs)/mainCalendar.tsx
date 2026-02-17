@@ -1,16 +1,19 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import * as Calendar from 'expo-calendar';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
-const HOUR_HEIGHT = 60; // 1 hour = 60 pixels
+const HOUR_HEIGHT = 60; // 1 hour is 60 pixels
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function DaySchedule() {
     const [events, setEvents] = useState([]);
     const [now, setNow] = useState(new Date());
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     useEffect(() => {
-        // 1. Fetch Calendar Data
+        // Fetch Calendar Data
         (async () => {
             const { status } = await Calendar.requestCalendarPermissionsAsync();
             if (status === 'granted') {
@@ -27,12 +30,12 @@ export default function DaySchedule() {
             }
         })();
 
-        // 2. Update time indicator every minute
+        // Update time indicator every minute
         const interval = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
 
-    // Helper to convert a Date object to vertical pixels
+    // Convert a Date object to vertical pixels
     const getTimePosition = (dateString) => {
         const date = new Date(dateString);
         const hours = date.getHours();
@@ -41,11 +44,11 @@ export default function DaySchedule() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Today's Schedule</Text>
+         <View style={[styles.container, isDark && { backgroundColor: '#000033' }]}>
+            <Text style={[styles.header, isDark && { color: 'white' }]}>Today's Schedule</Text>
             
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* 1. Background Grid (Hour Lines) */}
+                {/* Background Grid as Hour Sections */}
                 {HOURS.map((hour) => (
                     <View key={hour} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
                         <Text style={styles.hourLabel}>
@@ -55,7 +58,7 @@ export default function DaySchedule() {
                     </View>
                 ))}
 
-                {/* 2. Events Overlay */}
+                {/* Events Overlay */}
                 {events.map((event) => {
                     const top = getTimePosition(event.startDate);
                     const start = new Date(event.startDate);
@@ -73,7 +76,7 @@ export default function DaySchedule() {
                     );
                 })}
 
-                {/* 3. Current Time Indicator */}
+                {/*  Current Time Indicator line */}
                 <View style={[styles.timeIndicator, { top: getTimePosition(now) }]}>
                     <View style={styles.indicatorCircle} />
                     <View style={styles.indicatorLine} />
@@ -84,7 +87,8 @@ export default function DaySchedule() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff', paddingTop: 50 },
+    
+    container: { flex: 1, backgroundColor: '#E6F0FF', paddingTop: 50 },
     header: { fontSize: 20, textAlign: 'center', marginBottom: 10, fontWeight: 'bold' },
     scrollContent: { paddingRight: 20, paddingBottom: 50 },
     hourRow: { flexDirection: 'row', alignItems: 'flex-start' },
