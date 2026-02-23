@@ -1,10 +1,55 @@
-import { createContext } from "react";
+import React from 'react';
+import { StyleSheet, Dimensions } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import 'react-native-gesture-handler';
 
-<canvas id = "canvas"></canvas>
-const App = () => {
-    const [panoffset, setPanOffSet] = useState({x: 0, y: 0});
-    useContext.translate(panoffset.x, panoffset.y);
-    createContext.save();
-    createContext.restore();
-    
+const screen = Dimensions.get('window');
+
+const PinchToZoomImage = () => {
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = savedScale.value * e.scale;
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+      if (scale.value < 1) {
+        scale.value = withSpring(1);
+        savedScale.value = 1;
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      <GestureDetector gesture={pinchGesture}>
+        <Animated.Image
+          source={{ uri: 'https://images.pexels.com/photos/2147459/pexels-photo-2147459.jpeg' }}
+          style={[styles.image, animatedStyle]}
+          resizeMode="contain"
+        />
+      </GestureDetector>
+    </GestureHandlerRootView>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  image: {
+    width: screen.width,
+    height: screen.width,
+  },
+});
+
+export default PinchToZoomImage;
