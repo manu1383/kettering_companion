@@ -18,13 +18,31 @@ export const copyCalendarEvents = onCall(async (request) => {
 
   const calendar = google.calendar({ version: "v3", auth });
 
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
   const response = await calendar.events.list({
     calendarId: sourceCalendarId,
-    timeMin: new Date().toISOString(),
-    maxResults: 50,
+    timeMin: start.toISOString(),
+    timeMax: end.toISOString(),
+    maxResults: 100,
     singleEvents: true,
     orderBy: "startTime",
+    timeZone: "America/New_York",
   });
+
+  console.log(
+    "EVENTS RETURNED:",
+    response.data.items?.map((e) => ({
+      id: e.id,
+      summary: e.summary,
+      start: e.start,
+      end: e.end,
+      recurringEventId: e.recurringEventId
+    }))
+  );
 
   return response.data.items || [];
 });

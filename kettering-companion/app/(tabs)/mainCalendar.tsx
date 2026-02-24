@@ -3,11 +3,11 @@ import { copyCalendar } from "@/lib/copyCalendar";
 import * as Calendar from "expo-calendar";
 import React, { useEffect, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const HOUR_HEIGHT = 60;
@@ -56,34 +56,61 @@ export default function DaySchedule() {
   // IMPORT GOOGLE EVENTS
   // ------------------------
   async function handleImport() {
-    try {
-      const googleEvents = await copyCalendar("manu1383@kettering.edu");
+  try {
+    await loadEvents();
 
-      const calendars = await Calendar.getCalendarsAsync(
-        Calendar.EntityTypes.EVENT
-      );
+    const googleEvents = await copyCalendar("manu1383@kettering.edu");
 
-      const localCalendar = calendars[0];
+    const calendars = await Calendar.getCalendarsAsync(
+      Calendar.EntityTypes.EVENT
+    );
 
-      for (const event of googleEvents) {
-        if (!event.start?.dateTime || !event.end?.dateTime) continue;
+    const localCalendar = calendars[0];
 
-        await Calendar.createEventAsync(localCalendar.id, {
-          title: `[Google] ${event.summary || "Untitled Event"}`,
-          startDate: new Date(event.start.dateTime),
-          endDate: new Date(event.end.dateTime),
-          timeZone: "America/New_York",
-        });
+    for (const event of googleEvents) {
+      const title = `${event.summary || "Untitled Event"}`;
+
+      let startDate: Date;
+      let endDate: Date;
+      let isAllDay = false;
+
+      if (event.start?.dateTime && event.end?.dateTime) {
+        startDate = new Date(event.start.dateTime);
+        endDate = new Date(event.end.dateTime);
+      }
+      else if ((event.start as any)?.date && (event.end as any)?.date) {
+        startDate = new Date((event.start as any).date);
+        endDate = new Date((event.end as any).date);
+        isAllDay = true;
+      } else {
+        continue;
       }
 
-      console.log("Imported:", googleEvents.length);
+      const isDuplicate = events.some((existing) => {
+        return (
+          existing.title === title &&
+          new Date(existing.startDate).getTime() === startDate.getTime() &&
+          new Date(existing.endDate).getTime() === endDate.getTime()
+        );
+      });
 
-      // 🔥 Refresh UI
-      await loadEvents();
-    } catch (error) {
-      console.error("Import failed:", error);
+      if (!isDuplicate) {
+        await Calendar.createEventAsync(localCalendar.id, {
+          title,
+          startDate,
+          endDate,
+          timeZone: "America/New_York",
+          allDay: isAllDay,
+        });
+      }
     }
+
+    await loadEvents(); // refresh UI
+    console.log("Import complete");
+  } catch (error) {
+    console.error("Import failed:", error);
   }
+}
 
   // ------------------------
   // INITIAL LOAD
@@ -105,6 +132,35 @@ export default function DaySchedule() {
     return hours * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT;
   };
 
+  const clearCalendar = async () => {
+    const { status } = await Calendar.requestCalendarPermissionsAsync();
+    if (status !== "granted") return;
+
+    const calendars = await Calendar.getCalendarsAsync(
+      Calendar.EntityTypes.EVENT
+    );
+    const calendarIds = calendars.map((cal) => cal.id);
+
+    const now = new Date();
+    const start = new Date(now);
+    start.setFullYear(now.getFullYear() - 1);
+
+    const end = new Date(now);
+    end.setFullYear(now.getFullYear() + 1);
+
+    for (const calId of calendars) {
+      const events = await Calendar.getEventsAsync(
+        [calId.id],
+        start,
+        end
+      );
+      for (const event of events) {
+        await Calendar.deleteEventAsync(event.id);
+      }
+    }
+    await loadEvents();
+  };
+
   return (
     <View style={[styles.container, isDark && { backgroundColor: "#000033" }]}>
       <Text style={[styles.header, isDark && { color: "white" }]}>
@@ -114,6 +170,9 @@ export default function DaySchedule() {
       {/* IMPORT BUTTON */}
       <TouchableOpacity style={styles.importButton} onPress={handleImport}>
         <Text style={styles.importText}>Import Google Calendar</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.clearButton} onPress={clearCalendar}>
+        <Text style={styles.clearButtonText}>Clear Calendar</Text>
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -218,5 +277,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: "red",
     marginLeft: -4,
+  },
+  clearButton: {
+    backgroundColor: "#D9534F",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  clearButtonText: {
+    color: "#fff",
+    fontWeight: "700",
   },
 });
