@@ -15,14 +15,15 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function DaySchedule() {
   const [events, setEvents] = useState<Calendar.Event[]>([]);
-  const [now, setNow] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [importedDates, setImportedDates] = useState<Set<string>>(new Set());
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   // ------------------------
   // LOAD DEVICE EVENTS
   // ------------------------
-  async function loadEvents() {
+  async function loadEvents(date: Date) {
     const { status } = await Calendar.requestCalendarPermissionsAsync();
     const { status: reminderStatus } =
       await Calendar.requestRemindersPermissionsAsync();
@@ -37,10 +38,10 @@ export default function DaySchedule() {
     );
     const calendarIds = calendars.map((cal) => cal.id);
 
-    const start = new Date();
+    const start = new Date(date);
     start.setHours(0, 0, 0, 0);
 
-    const end = new Date();
+    const end = new Date(date);
     end.setHours(23, 59, 59, 999);
 
     const dayEvents = await Calendar.getEventsAsync(
@@ -57,9 +58,9 @@ export default function DaySchedule() {
   // ------------------------
   async function handleImport() {
   try {
-    await loadEvents();
+    await loadEvents(selectedDate);
 
-    const googleEvents = await copyCalendar("manu1383@kettering.edu");
+    const googleEvents = await copyCalendar("manu1383@kettering.edu", selectedDate);
 
     const calendars = await Calendar.getCalendarsAsync(
       Calendar.EntityTypes.EVENT
@@ -105,7 +106,7 @@ export default function DaySchedule() {
       }
     }
 
-    await loadEvents(); // refresh UI
+    await loadEvents(selectedDate); // refresh UI
     console.log("Import complete");
   } catch (error) {
     console.error("Import failed:", error);
@@ -116,11 +117,16 @@ export default function DaySchedule() {
   // INITIAL LOAD
   // ------------------------
   useEffect(() => {
-    loadEvents();
-
-    const interval = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(interval);
-  }, []);
+    const run = async () => {
+      const key = selectedDate.toDateString();
+      if (!importedDates.has(key)) {
+        await handleImport();
+        setImportedDates((prev) => new Set(prev).add(key));
+      }
+      await loadEvents(selectedDate);
+    }
+    run();
+  }, [selectedDate]);
 
   // ------------------------
   // POSITION HELPER
@@ -158,24 +164,67 @@ export default function DaySchedule() {
         await Calendar.deleteEventAsync(event.id);
       }
     }
-    await loadEvents();
+    await loadEvents(selectedDate);
   };
+
+  const formattedDate = selectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const goToPreviousDay = () => {
+    const prevDate = new Date(selectedDate);
+    prevDate.setDate(prevDate.getDate() - 1);
+    setSelectedDate(prevDate);
+  }
+
+  const goToNextDay = () => {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    setSelectedDate(nextDate);
+  }
+
+  const allDayEvents = events.filter(e => e.allDay);
+  const timedEvents = events.filter(e => !e.allDay);
 
   return (
     <View style={[styles.container, isDark && { backgroundColor: "#000033" }]}>
-      <Text style={[styles.header, isDark && { color: "white" }]}>
-        Today's Schedule
-      </Text>
+      
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={goToPreviousDay}>
+          <Text style={styles.arrow}>◀</Text>
+        </TouchableOpacity>
+        <Text style={[styles.header, isDark && { color: "white" }]}>
+          {formattedDate}
+        </Text>
+        <TouchableOpacity onPress={goToNextDay}>
+          <Text style={styles.arrow}>▶</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* IMPORT BUTTON */}
-      <TouchableOpacity style={styles.importButton} onPress={handleImport}>
-        <Text style={styles.importText}>Import Google Calendar</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.clearButton} onPress={clearCalendar}>
-        <Text style={styles.clearButtonText}>Clear Calendar</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.importButton} onPress={handleImport}>
+          <Text style={styles.importText}>Import Google Calendar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.clearButton} onPress={clearCalendar}>
+          <Text style={styles.clearButtonText}>Clear Calendar</Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* All-day Events */}
+        {allDayEvents.length > 0 && (
+          <View style={styles.allDayContainer}>
+            {allDayEvents.map(event => (
+              <View key={event.id} style={styles.allDayEvent}>
+                <Text style={styles.allDayText}>{event.title}</Text>
+              </View>
+            ))}
+          </View>
+        )}
         {/* Hour Grid */}
         {HOURS.map((hour) => (
           <View key={hour} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
@@ -193,7 +242,7 @@ export default function DaySchedule() {
         ))}
 
         {/* Events */}
-        {events.map((event) => {
+        {timedEvents.map((event) => {
           const top = getTimePosition(event.startDate);
           const start = new Date(event.startDate);
           const end = new Date(event.endDate);
@@ -213,7 +262,7 @@ export default function DaySchedule() {
         })}
 
         {/* Current Time Indicator */}
-        <View style={[styles.timeIndicator, { top: getTimePosition(now) }]}>
+        <View style={[styles.timeIndicator, { top: getTimePosition(selectedDate) }]}>
           <View style={styles.indicatorCircle} />
           <View style={styles.indicatorLine} />
         </View>
@@ -231,14 +280,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   importButton: {
+    flex: 1,
     backgroundColor: "#007AFF",
-    padding: 10,
-    marginHorizontal: 40,
-    marginBottom: 10,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    height: 40
   },
-  importText: { color: "white", fontWeight: "bold" },
+  importText: { color: "white", fontWeight: "bold", textAlign: "center" },
   scrollContent: { paddingRight: 20, paddingBottom: 50 },
   hourRow: { flexDirection: "row", alignItems: "flex-start" },
   hourLabel: {
@@ -279,14 +329,51 @@ const styles = StyleSheet.create({
     marginLeft: -4,
   },
   clearButton: {
+    flex: 1,
     backgroundColor: "#D9534F",
-    padding: 12,
-    borderRadius: 10,
+    marginBottom: 10,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
+    paddingVertical: 12,
+    justifyContent: "center",
+    height: 40
   },
   clearButtonText: {
     color: "#fff",
     fontWeight: "700",
   },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: 40,
+    marginBottom: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  arrow: {
+    fontSize: 22,
+    fontWeight: "bold"
+  },
+  allDayContainer: {
+    marginLeft: 70,
+    marginBottom: 10,
+  },
+  allDayEvent: {
+    backgroundColor: "rgba(0, 122, 255, 0.15)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#007AFF",
+    padding: 6,
+    borderRadius: 4,
+    marginBottom: 5
+  },
+  allDayText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#007AFF"
+  }
 });
