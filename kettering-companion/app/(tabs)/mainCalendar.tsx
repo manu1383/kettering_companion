@@ -1,131 +1,75 @@
 ﻿import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
-import * as Calendar from "expo-calendar";
 import React, { useEffect, useState } from "react";
 import {
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  TouchableWithoutFeedback,
+  View
 } from "react-native";
 
 const HOUR_HEIGHT = 60;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function DaySchedule() {
-  const [events, setEvents] = useState<Calendar.Event[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [importedDates, setImportedDates] = useState<Set<string>>(new Set());
+  const [infoVisible, setInfoVisible] = useState(false);
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isLight = colorScheme === "light";
 
-  // ------------------------
-  // LOAD DEVICE EVENTS
-  // ------------------------
-  async function loadEvents(date: Date) {
-    const { status } = await Calendar.requestCalendarPermissionsAsync();
-    const { status: reminderStatus } =
-      await Calendar.requestRemindersPermissionsAsync();
+  const normalizeGoogleEvent = (event: any) => {
+    let startDate: Date;
+    let endDate: Date;
+    let isAllDay = false;
 
-    if (status !== "granted" || reminderStatus !== "granted") {
-      console.log("Permissions not granted");
-      return;
+    if (event.start?.dateTime && event.end?.dateTime) {
+      startDate = new Date(event.start.dateTime);
+      endDate = new Date(event.end.dateTime);
+    } else if (event.start?.date && event.end?.date) {
+      startDate = new Date(event.start.date);
+      endDate = new Date(event.end.date);
+      isAllDay = true;
+    } else {
+      return null;
     }
 
-    const calendars = await Calendar.getCalendarsAsync(
-      Calendar.EntityTypes.EVENT
-    );
-    const calendarIds = calendars.map((cal) => cal.id);
+    return {
+      id: event.id,
+      title: event.summary || "Untitled Event",
+      startDate,
+      endDate,
+      allDay: isAllDay,
+    };
+  };
 
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999);
-
-    const dayEvents = await Calendar.getEventsAsync(
-      calendarIds,
-      start,
-      end
-    );
-
-    setEvents(dayEvents);
-  }
-
-  // ------------------------
-  // IMPORT GOOGLE EVENTS
-  // ------------------------
   async function handleImport() {
-  try {
-    await loadEvents(selectedDate);
+    try {
+      const googleEvents = await copyCalendar(
+        "manu1383@kettering.edu",
+        selectedDate
+      );
 
-    const googleEvents = await copyCalendar("manu1383@kettering.edu", selectedDate);
+      const parsedEvents = googleEvents
+        .map(normalizeGoogleEvent)
+        .filter(Boolean);
 
-    const calendars = await Calendar.getCalendarsAsync(
-      Calendar.EntityTypes.EVENT
-    );
+      setEvents(parsedEvents);
 
-    const localCalendar = calendars[0];
-
-    for (const event of googleEvents) {
-      const title = `${event.summary || "Untitled Event"}`;
-
-      let startDate: Date;
-      let endDate: Date;
-      let isAllDay = false;
-
-      if (event.start?.dateTime && event.end?.dateTime) {
-        startDate = new Date(event.start.dateTime);
-        endDate = new Date(event.end.dateTime);
-      }
-      else if ((event.start as any)?.date && (event.end as any)?.date) {
-        startDate = new Date((event.start as any).date);
-        endDate = new Date((event.end as any).date);
-        isAllDay = true;
-      } else {
-        continue;
-      }
-
-      const isDuplicate = events.some((existing) => {
-        return (
-          existing.title === title &&
-          new Date(existing.startDate).getTime() === startDate.getTime() &&
-          new Date(existing.endDate).getTime() === endDate.getTime()
-        );
-      });
-
-      if (!isDuplicate) {
-        await Calendar.createEventAsync(localCalendar.id, {
-          title,
-          startDate,
-          endDate,
-          timeZone: "America/New_York",
-          allDay: isAllDay,
-        });
-      }
+    } catch (error) {
+      console.error("Import failed:", error);
     }
-
-    await loadEvents(selectedDate); // refresh UI
-    console.log("Import complete");
-  } catch (error) {
-    console.error("Import failed:", error);
   }
-}
 
   // ------------------------
   // INITIAL LOAD
   // ------------------------
   useEffect(() => {
-    const run = async () => {
-      const key = selectedDate.toDateString();
-      if (!importedDates.has(key)) {
-        await handleImport();
-        setImportedDates((prev) => new Set(prev).add(key));
-      }
-      await loadEvents(selectedDate);
-    }
-    run();
+    handleImport();
   }, [selectedDate]);
 
   // ------------------------
@@ -136,35 +80,6 @@ export default function DaySchedule() {
     const hours = date.getHours();
     const minutes = date.getMinutes();
     return hours * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT;
-  };
-
-  const clearCalendar = async () => {
-    const { status } = await Calendar.requestCalendarPermissionsAsync();
-    if (status !== "granted") return;
-
-    const calendars = await Calendar.getCalendarsAsync(
-      Calendar.EntityTypes.EVENT
-    );
-    const calendarIds = calendars.map((cal) => cal.id);
-
-    const now = new Date();
-    const start = new Date(now);
-    start.setFullYear(now.getFullYear() - 1);
-
-    const end = new Date(now);
-    end.setFullYear(now.getFullYear() + 1);
-
-    for (const calId of calendars) {
-      const events = await Calendar.getEventsAsync(
-        [calId.id],
-        start,
-        end
-      );
-      for (const event of events) {
-        await Calendar.deleteEventAsync(event.id);
-      }
-    }
-    await loadEvents(selectedDate);
   };
 
   const formattedDate = selectedDate.toLocaleDateString("en-US", {
@@ -188,33 +103,41 @@ export default function DaySchedule() {
 
   const allDayEvents = events.filter(e => e.allDay);
   const timedEvents = events.filter(e => !e.allDay);
+  const today = new Date();
+
+  const isToday =
+    selectedDate.getDate() === today.getDate() &&
+    selectedDate.getMonth() === today.getMonth() &&
+    selectedDate.getFullYear() === today.getFullYear();
 
   return (
-    <View style={[styles.container, isDark && { backgroundColor: "#000033" }]}>
+    <View style={[styles.container, { backgroundColor: "#ffffff" }]}>
       
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={goToPreviousDay}>
           <Text style={styles.arrow}>◀</Text>
         </TouchableOpacity>
-        <Text style={[styles.header, isDark && { color: "white" }]}>
+        <Text style={styles.dateHeader}>
           {formattedDate}
         </Text>
-        <TouchableOpacity onPress={goToNextDay}>
-          <Text style={styles.arrow}>▶</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity onPress={() => setInfoVisible(true)}>
+            <Text style={styles.infoButton}>ℹ️</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={goToNextDay}>
+            <Text style={styles.arrow}>▶</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* IMPORT BUTTON */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.importButton} onPress={handleImport}>
-          <Text style={styles.importText}>Import Google Calendar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.clearButton} onPress={clearCalendar}>
-          <Text style={styles.clearButtonText}>Clear Calendar</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingBottom: 50,
+          minHeight: HOUR_HEIGHT * 24,
+        }}
+      >
         {/* All-day Events */}
         {allDayEvents.length > 0 && (
           <View style={styles.allDayContainer}>
@@ -262,11 +185,50 @@ export default function DaySchedule() {
         })}
 
         {/* Current Time Indicator */}
-        <View style={[styles.timeIndicator, { top: getTimePosition(selectedDate) }]}>
-          <View style={styles.indicatorCircle} />
-          <View style={styles.indicatorLine} />
-        </View>
+        {isToday && (
+          <View
+            style={[
+              styles.timeIndicator,
+              { top: getTimePosition(new Date()) },
+            ]}
+          >
+            <View style={styles.indicatorCircle} />
+            <View style={styles.indicatorLine} />
+          </View>
+        )}
       </ScrollView>
+      <Modal
+        visible={infoVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setInfoVisible(false)}>
+          <View style={styles.modalOverlay}>
+            
+            {/* Prevent tap inside modal from closing */}
+            <TouchableWithoutFeedback>
+              <View style={[styles.modalContent, isLight && { backgroundColor: "#ffffff" }]}>
+                <Text style={styles.modalTitle}>About This Calendar</Text>
+
+                <Text style={styles.modalText}>
+                  In order to import your Google Calendar, you need to share your calendar with this email address:
+                  "calendar-sync@kettering-connect.iam.gserviceaccount.com"
+                  and set permissions to "Make changes to events". This allows the app to read your calendar events and display them here. Your data is not stored or shared with anyone else. You can revoke access at any time from your Google Calendar settings.
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setInfoVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -289,7 +251,7 @@ const styles = StyleSheet.create({
     height: 40
   },
   importText: { color: "white", fontWeight: "bold", textAlign: "center" },
-  scrollContent: { paddingRight: 20, paddingBottom: 50 },
+  scrollContent: { paddingBottom: 50 },
   hourRow: { flexDirection: "row", alignItems: "flex-start" },
   hourLabel: {
     width: 60,
@@ -310,6 +272,7 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 4,
     zIndex: 5,
+    pointerEvents: "none",
   },
   eventTitle: { fontSize: 12, fontWeight: "600", color: "#007AFF" },
   timeIndicator: {
@@ -319,6 +282,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     zIndex: 10,
+    pointerEvents: "none",
   },
   indicatorLine: { flex: 1, height: 2, backgroundColor: "red" },
   indicatorCircle: {
@@ -353,6 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 10,
+    marginTop: 10,
     paddingHorizontal: 20,
   },
   arrow: {
@@ -375,5 +340,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#007AFF"
+  },
+  infoButton: {
+    fontSize: 20,
+    marginHorizontal: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  closeButton: {
+    backgroundColor: "#007AFF",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  dateHeader: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000000"
   }
 });
