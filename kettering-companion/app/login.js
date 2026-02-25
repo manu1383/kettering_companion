@@ -3,7 +3,7 @@ import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmail
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../context/AuthProvider';
-import { auth } from "./firebase";
+import { auth } from "../lib/firebase";
 
 export default function AuthScreen() {
     const [isLogin, setIsLogin] = useState(true);

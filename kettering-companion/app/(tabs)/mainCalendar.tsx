@@ -1,5 +1,8 @@
 ﻿import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
+import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import {
   Modal,
@@ -11,16 +14,45 @@ import {
   View
 } from "react-native";
 
+WebBrowser.maybeCompleteAuthSession();
+
 const HOUR_HEIGHT = 60;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function DaySchedule() {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [importedDates, setImportedDates] = useState<Set<string>>(new Set());
   const [infoVisible, setInfoVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const isLight = colorScheme === "light";
+
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: "ketteringcompanion",
+    path: "redirect",
+  });
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: "537697026527-1escunuj1p6aoillsqhtpfa8qackvc9i.apps.googleusercontent.com",
+    iosClientId: "537697026527-14mvdca5rnjnnu39ieguf3rgkkr426qd.apps.googleusercontent.com",
+    scopes: [
+      "https://www.googleapis.com/auth/calendar.readonly"
+    ],
+  });
+
+  console.log('REDIRECT URI:', redirectUri);
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const token = response.authentication?.accessToken;
+      console.log("GOOGLE TOKEN:", token);
+      if (token) {
+        setAccessToken(token);
+      }
+    }
+  }, [response]);
 
   const normalizeGoogleEvent = (event: any) => {
     let startDate: Date;
@@ -49,19 +81,29 @@ export default function DaySchedule() {
 
   async function handleImport() {
     try {
-      const googleEvents = await copyCalendar(
-        "manu1383@kettering.edu",
-        selectedDate
-      );
+      if (!accessToken) {
+        if (!request) return;
+        await promptAsync();
+        return;
+      }
+      
+      setLoading(true);
+      const googleEvents = await copyCalendar(selectedDate, accessToken);
+
+      console.log("RAW GOOGLE EVENTS:", googleEvents);
 
       const parsedEvents = googleEvents
         .map(normalizeGoogleEvent)
         .filter(Boolean);
 
       setEvents(parsedEvents);
+      setLoading(false);
 
     } catch (error) {
       console.error("Import failed:", error);
+      setErrorMessage("Failed to load calendar events. Please try again.");
+      setLoading(false);
+      setInfoVisible(true);
     }
   }
 
@@ -70,7 +112,7 @@ export default function DaySchedule() {
   // ------------------------
   useEffect(() => {
     handleImport();
-  }, [selectedDate]);
+  }, [selectedDate, accessToken]);
 
   // ------------------------
   // POSITION HELPER
@@ -121,8 +163,8 @@ export default function DaySchedule() {
           {formattedDate}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity onPress={() => setInfoVisible(true)}>
-            <Text style={styles.infoButton}>ℹ️</Text>
+          <TouchableOpacity onPress={handleImport}>
+            <Text style={styles.infoButton}>🔄</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={goToNextDay}>
@@ -130,6 +172,12 @@ export default function DaySchedule() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {loading && (
+        <Text style={{textAlign: "center", marginBottom: 10}}>
+          Loading events...
+        </Text>
+      )}
 
       <ScrollView
         style={{ flex: 1 }}
@@ -241,16 +289,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontWeight: "bold",
   },
-  importButton: {
-    flex: 1,
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-    height: 40
-  },
-  importText: { color: "white", fontWeight: "bold", textAlign: "center" },
   scrollContent: { paddingBottom: 50 },
   hourRow: { flexDirection: "row", alignItems: "flex-start" },
   hourLabel: {

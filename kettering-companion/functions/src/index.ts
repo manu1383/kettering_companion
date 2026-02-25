@@ -1,48 +1,47 @@
 import * as admin from "firebase-admin";
-import { onCall } from "firebase-functions/v2/https";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { google } from "googleapis";
 
 admin.initializeApp();
 
 export const copyCalendarEvents = onCall(async (request) => {
-  const { sourceCalendarId } = request.data;
-
-  if (!sourceCalendarId) {
-    throw new Error("Missing sourceCalendarId");
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
   }
 
-  const auth = new google.auth.GoogleAuth({
-    keyFile: "serviceAccountKey.json",
-    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
-  });
+  const { accessToken, date } = request.data;
 
-  const calendar = google.calendar({ version: "v3", auth });
+  if (!accessToken) {
+    throw new HttpsError("invalid-argument", "Missing Google access token");
+  }
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+  if (!date) {
+    throw new HttpsError("invalid-argument", "Missing date parameter");
+  }
 
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  const response = await calendar.events.list({
-    calendarId: sourceCalendarId,
-    timeMin: start.toISOString(),
-    timeMax: end.toISOString(),
-    maxResults: 100,
-    singleEvents: true,
-    orderBy: "startTime",
-    timeZone: "America/New_York",
-  });
+  const start = `${date}T00:00:00-05:00`;
+  const end = `${date}T23:59:59-05:00`;
 
-  console.log(
-    "EVENTS RETURNED:",
-    response.data.items?.map((e) => ({
-      id: e.id,
-      summary: e.summary,
-      start: e.start,
-      end: e.end,
-      recurringEventId: e.recurringEventId
-    }))
-  );
+  try {
+    // Use OAuth2 client (NOT service account)
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: accessToken });
 
-  return response.data.items || [];
+    const calendar = google.calendar({ version: "v3", auth });
+
+    const response = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: start,
+      timeMax: end,
+      singleEvents: true,
+      orderBy: "startTime",
+      timeZone: "America/New_York",
+    });
+
+    return response.data.items || [];
+
+  } catch (error: any) {
+    console.error("GOOGLE ERROR:", error);
+    throw new HttpsError("internal", error.message);
+  }
 });
