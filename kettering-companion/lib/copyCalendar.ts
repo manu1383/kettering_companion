@@ -13,15 +13,13 @@ export interface GoogleCalendarEvent {
 }
 
 export async function copyCalendar(
-  date: Date,
+  date: string,
   accessToken: string
 ) {
   const copyFn = httpsCallable(functions, "copyCalendarEvents");
 
-  const formattedDate = date.toISOString().split("T")[0];
-
   const result = await copyFn({
-    date: formattedDate,
+    date,
     accessToken,
   });
 

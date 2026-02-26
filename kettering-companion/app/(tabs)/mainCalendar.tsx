@@ -88,7 +88,12 @@ export default function DaySchedule() {
       }
       
       setLoading(true);
-      const googleEvents = await copyCalendar(selectedDate, accessToken);
+      const formattedDate = 
+        selectedDate.getFullYear() + "-" +
+        String(selectedDate.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(selectedDate.getDate()).padStart(2, "0");
+      const googleEvents = await copyCalendar(formattedDate, accessToken);
 
       console.log("RAW GOOGLE EVENTS:", googleEvents);
 
