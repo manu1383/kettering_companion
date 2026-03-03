@@ -1,29 +1,30 @@
 import { useRouter } from 'expo-router';
 import {
-    createUserWithEmailAndPassword,
-    getMultiFactorResolver,
-    multiFactor,
-    PhoneAuthProvider,
-    PhoneMultiFactorGenerator,
-    RecaptchaVerifier,
-    sendEmailVerification,
-    sendPasswordResetEmail,
-    signInWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  getMultiFactorResolver,
+  multiFactor,
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
+  RecaptchaVerifier,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword
 } from 'firebase/auth';
+import { doc, setDoc } from "firebase/firestore";
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { AuthContext } from '../context/AuthProvider';
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 
 export default function AuthScreen() {
 
@@ -67,7 +68,7 @@ export default function AuthScreen() {
     ]).start();
   }, []);
 
-  // ✅ Correct reCAPTCHA setup (Web Only)
+  // Correct reCAPTCHA setup (Web Only)
   useEffect(() => {
     if (!recaptchaRef.current) {
       recaptchaRef.current = new RecaptchaVerifier(
@@ -121,6 +122,12 @@ export default function AuthScreen() {
         const userCredential =
           await createUserWithEmailAndPassword(auth, email, password);
 
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          role: "student",
+          clubsManaging: [],
+          createdAt: new Date(),
+        });
+        
         await sendEmailVerification(userCredential.user);
 
         alert("Verification email sent. Please verify before logging in.");
@@ -261,7 +268,7 @@ export default function AuthScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               style={styles.input}
-              placeholder="you@example.com"
+              placeholder="user@kettering.edu"
               placeholderTextColor="#888"
             />
 
@@ -308,6 +315,7 @@ export default function AuthScreen() {
               keyboardType="phone-pad"
               style={styles.input}
               placeholder="+11234567890"
+              placeholderTextColor="#888"
             />
 
             <TouchableOpacity style={styles.button} onPress={handleEnroll}>
@@ -320,6 +328,7 @@ export default function AuthScreen() {
               keyboardType="number-pad"
               style={styles.input}
               placeholder="Enter SMS Code"
+              placeholderTextColor="#888"
             />
 
             <TouchableOpacity style={styles.button} onPress={confirmEnrollment}>
@@ -337,6 +346,7 @@ export default function AuthScreen() {
               keyboardType="number-pad"
               style={styles.input}
               placeholder="123456"
+              placeholderTextColor="#888"
             />
             <TouchableOpacity style={styles.button} onPress={handleVerifyLogin2FA}>
               <Text style={styles.buttonText}>Verify Code</Text>
