@@ -1,26 +1,26 @@
 import { useRouter } from 'expo-router';
 import {
-    createUserWithEmailAndPassword,
-    getMultiFactorResolver,
-    multiFactor,
-    PhoneAuthProvider,
-    PhoneMultiFactorGenerator,
-    RecaptchaVerifier,
-    sendEmailVerification,
-    sendPasswordResetEmail,
-    signInWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  getMultiFactorResolver,
+  multiFactor,
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
+  RecaptchaVerifier,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword
 } from 'firebase/auth';
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { AuthContext } from '../context/AuthProvider';
 import { auth } from "../lib/firebase";
@@ -308,6 +308,7 @@ export default function AuthScreen() {
               keyboardType="phone-pad"
               style={styles.input}
               placeholder="+11234567890"
+              placeholderTextColor="#888"
             />
 
             <TouchableOpacity style={styles.button} onPress={handleEnroll}>
@@ -320,6 +321,7 @@ export default function AuthScreen() {
               keyboardType="number-pad"
               style={styles.input}
               placeholder="Enter SMS Code"
+              placeholderTextColor="#888"
             />
 
             <TouchableOpacity style={styles.button} onPress={confirmEnrollment}>
@@ -337,6 +339,7 @@ export default function AuthScreen() {
               keyboardType="number-pad"
               style={styles.input}
               placeholder="123456"
+              placeholderTextColor="#888"
             />
             <TouchableOpacity style={styles.button} onPress={handleVerifyLogin2FA}>
               <Text style={styles.buttonText}>Verify Code</Text>
