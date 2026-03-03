@@ -115,7 +115,7 @@ export default function AuthScreen() {
         }
 
         setUser(userCredential.user);
-        router.replace('/(tabs)/explore');
+        router.replace('/(tabs)/mainCalendar');
 
       } else {
 
@@ -196,7 +196,7 @@ export default function AuthScreen() {
       "Primary Phone"
     );
 
-    router.replace('/(tabs)/explore');
+    router.replace('/(tabs)/mainCalendar');
   };
 
   // 🔐 Verify Login Challenge
@@ -211,7 +211,7 @@ export default function AuthScreen() {
     await resolver.resolveSignIn(assertion);
 
     setUser(auth.currentUser);
-    router.replace('/(tabs)/explore');
+    router.replace('/(tabs)/mainCalendar');
   };
 
   const handleForgotPassword = async () => {
