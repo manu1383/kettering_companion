@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword
 } from 'firebase/auth';
+import { doc, setDoc } from "firebase/firestore";
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -23,7 +24,7 @@ import {
   View
 } from 'react-native';
 import { AuthContext } from '../context/AuthProvider';
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 
 export default function AuthScreen() {
 
@@ -67,7 +68,7 @@ export default function AuthScreen() {
     ]).start();
   }, []);
 
-  // ✅ Correct reCAPTCHA setup (Web Only)
+  // Correct reCAPTCHA setup (Web Only)
   useEffect(() => {
     if (!recaptchaRef.current) {
       recaptchaRef.current = new RecaptchaVerifier(
@@ -121,6 +122,12 @@ export default function AuthScreen() {
         const userCredential =
           await createUserWithEmailAndPassword(auth, email, password);
 
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          role: "student",
+          clubsManaging: [],
+          createdAt: new Date(),
+        });
+        
         await sendEmailVerification(userCredential.user);
 
         alert("Verification email sent. Please verify before logging in.");
@@ -261,7 +268,7 @@ export default function AuthScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               style={styles.input}
-              placeholder="you@example.com"
+              placeholder="user@kettering.edu"
               placeholderTextColor="#888"
             />
 
