@@ -1,17 +1,24 @@
-﻿import { useRouter } from 'expo-router';
+﻿import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { collection, getDocs } from "firebase/firestore";
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AuthContext } from '../../context/AuthProvider';
 import { db } from '../../lib/firebase';
+
+interface MeetingTime {
+    day: string;
+    time: string;
+}
 
 interface Club {
     id: string;
     name: string;
     description: string;
-    meetingDay: string;
-    meetingTime: string;
+    location: string;
     contactEmail: string;
-    location?: string;
+    schedule: MeetingTime[];
+    officers: string[];
 }
 
 export default function ClubsScreen() {
@@ -20,24 +27,20 @@ export default function ClubsScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+    const { user, role } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchClubs = async () => {
-            const snapshot = await getDocs(collection(db, "clubs"));
-            const clubData: Club[] = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    name: data.name,
-                    description: data.description,
-                    meetingDay: data.meetingDay,
-                    meetingTime: data.meetingTime,
-                    contactEmail: data.contactEmail,
-                };
-            });
-            clubData.sort((a, b) => a.name.localeCompare(b.name));
-            setClubs(clubData);
-            setLoading(false);
+        const snapshot = await getDocs(collection(db, "clubs"));
+
+        const clubData: Club[] = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...(doc.data() as Omit<Club, "id">),
+        }));
+
+        clubData.sort((a, b) => a.name.localeCompare(b.name));
+        setClubs(clubData);
+        setLoading(false);
         };
 
         fetchClubs();
@@ -47,33 +50,54 @@ export default function ClubsScreen() {
         club.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    const renderClub = ({ item }: { item: Club }) => (
+    const renderClub = ({ item }: { item: Club }) => {
+        const scheduleText =
+        item.schedule
+            ?.map((m) => `${m.day} ${m.time}`)
+            .join(" • ") ?? "";
+        
+        const isOfficer =
+            item.officers?.includes(user?.uid ?? "");
+
+        const canManage = role === "admin" || isOfficer;
+
+        return (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => 
-                router.push({
-                    pathname: "/clubs/[id]",
-                    params: { id: item.id },
-                })
+            onPress={() =>
+            router.push({
+                pathname: "/clubs/[id]",
+                params: { id: item.id },
+            })
             }
         >
-            <Text style={styles.clubName}>{item.name}</Text>
+            <Text style={styles.name}>{item.name}</Text>
 
-            {item.description ? (
-                <Text style={styles.description} numberOfLines={2}>
-                    {item.description}
-                </Text>
-            ) : null}
-
-            {(item.meetingDay || item.meetingTime || item.location) && (
-                <Text style={styles.meeting}>
-                    {[item.meetingDay, item.meetingTime, item.location]
-                        .filter(Boolean)
-                        .join(" • ")}
-                </Text>
+            {item.description && (
+            <Text style={styles.description} numberOfLines={2}>
+                {item.description}
+            </Text>
             )}
+
+            <Text style={styles.schedule}>
+            {[scheduleText, item.location].filter(Boolean).join(" • ")}
+            </Text>
+            {canManage && 
+                <TouchableOpacity
+                    style={{ position: "absolute", right: 12, top: 30 }}
+                    onPress={() =>
+                        router.push({
+                            pathname: "/clubs/[id]/edit",
+                            params: { id: item.id },
+                        })
+                    }
+                >
+                    <Feather name="edit-2" size={20} color="#4BA3C7" />
+                </TouchableOpacity>
+            }
         </TouchableOpacity>
-    );
+        );
+    };
 
     if (loading) {
         return (
@@ -103,6 +127,14 @@ export default function ClubsScreen() {
                 placeholderTextColor="#888"
             />
 
+            {role === "admin" && (
+                <TouchableOpacity
+                    style={styles.createButton}
+                    onPress={() => router.push("/admin/createClub")}
+                >
+                    <Text style={styles.createButtonText}>+ Create Club</Text>
+                </TouchableOpacity>
+            )}
             <FlatList
                 data={filteredClubs}
                 keyExtractor={(item) => item.id}
@@ -117,60 +149,81 @@ export default function ClubsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#E6F0F3",
-    paddingHorizontal: 18,
-    paddingTop: 20,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#E6F0F3",
-  },
-  header: {
-    fontSize: 30,
-    fontWeight: "700",
-    color: "#1D3D47",
-    marginBottom: 18,
-  },
-  search: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  clubName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1D3D47",
-    marginBottom: 6,
-  },
-  description: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 10,
-  },
-  meeting: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#4BA3C7",
-  },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 40,
-    color: "#666",
-  },
+    container: {
+        flex: 1,
+        backgroundColor: "#E6F0F3",
+        paddingHorizontal: 18,
+        paddingTop: 20,
+    },
+    centered: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#E6F0F3",
+    },
+    header: {
+        fontSize: 30,
+        fontWeight: "700",
+        color: "#1D3D47",
+        marginBottom: 18,
+    },
+    search: {
+        backgroundColor: "#fff",
+        borderRadius: 14,
+        padding: 14,
+        fontSize: 16,
+        marginBottom: 20,
+    },
+    card: {
+        backgroundColor: "#fff",
+        borderRadius: 18,
+        padding: 18,
+        marginBottom: 14,
+        shadowColor: "#000",
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    clubName: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#1D3D47",
+        marginBottom: 6,
+    },
+    description: {
+        fontSize: 14,
+        color: "#555",
+        marginBottom: 10,
+    },
+    meeting: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#4BA3C7",
+    },
+    emptyText: {
+        textAlign: "center",
+        marginTop: 40,
+        color: "#666",
+    },
+    createButton: {
+        backgroundColor: '#1D3D47',
+        paddingVertical: 12,
+        borderRadius: 14,
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    createButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    name: {
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 6,
+    }, 
+    schedule: {
+        color: "#4BA3C7",
+        fontWeight: "600",
+    }
 });

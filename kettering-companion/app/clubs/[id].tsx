@@ -2,11 +2,11 @@ import { useLocalSearchParams } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { AuthContext } from "../../context/AuthProvider";
 import { db } from "../../lib/firebase";
@@ -15,12 +15,16 @@ import { db } from "../../lib/firebase";
    Type Definition
 ============================= */
 
+interface MeetingTime {
+    day: string;
+    time: string;
+}
+
 interface Club {
   id: string;
   name: string;
   description?: string;
-  meetingDay?: string;
-  meetingTime?: string;
+  schedule?: MeetingTime[];
   location?: string;
   contactEmail?: string;
   instagram?: string;
@@ -89,12 +93,22 @@ export default function ClubDetailScreen() {
         <Text style={styles.description}>{club.description}</Text>
       )}
 
-      {(club.meetingDay || club.meetingTime || club.location) && (
-        <Text style={styles.meeting}>
-          {[club.meetingDay, club.meetingTime, club.location]
-            .filter(Boolean)
-            .join(" • ")}
-        </Text>
+      {club.schedule && (
+        <>
+          <Text style={styles.sectionTitle}>Meeting Times</Text>
+          {club.schedule.map((m, i) => (
+            <Text key={i} style={styles.schedule}>
+              {m.day} • {m.time}
+            </Text>
+          ))}
+        </>
+      )}
+
+      {club.location && (
+        <>
+          <Text style={styles.sectionTitle}>Location</Text>
+          <Text>{club.location}</Text>
+        </>
       )}
 
       {club.contactEmail && (
@@ -151,5 +165,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#4BA3C7",
     fontWeight: "600",
+  },
+  sectionTitle: {
+    fontWeight: "700",
+    marginTop: 15,
+  },
+  schedule: {
+      color: "#4BA3C7",
+      fontWeight: "600",
+      marginBottom: 4,
   },
 });

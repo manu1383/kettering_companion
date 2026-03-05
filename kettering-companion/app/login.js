@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { doc, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -122,11 +122,18 @@ export default function AuthScreen() {
         const userCredential =
           await createUserWithEmailAndPassword(auth, email, password);
 
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-          role: "student",
-          clubsManaging: [],
-          createdAt: new Date(),
-        });
+        try {
+          await setDoc(doc(db, "users", userCredential.user.uid), {
+            email: email.toLowerCase(),
+            role: "student",
+            clubsManaging: [],
+            createdAt: serverTimestamp(),
+          });
+
+          console.log("User document created successfully");
+        } catch (err) {
+          console.error("Failed to create user document:", err);
+        }
         
         await sendEmailVerification(userCredential.user);
 
