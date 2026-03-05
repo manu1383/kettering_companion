@@ -2,13 +2,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { arrayUnion, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { AuthContext } from "../../../context/AuthProvider";
 import { db } from "../../../lib/firebase";
@@ -167,11 +167,20 @@ export default function EditClubScreen() {
         style={styles.input}
       />
 
-      <Text style={styles.label}>Contact Email</Text>
+      <Text style={styles.label}>Contact Email (publicly visible, also sets officer permissions)</Text>
       <TextInput
         value={contactEmail}
         onChangeText={setContactEmail}
         style={styles.input}
+      />
+
+      <Text style={styles.label}>Add Officer by Email (sets permissions)</Text>
+      <TextInput
+          style = {styles.input}
+          value = {officerEmail}
+          onChangeText={setOfficerEmail}
+          placeholder="officer@kettering.edu"
+          placeholderTextColor="#888"
       />
 
       <Text style={styles.label}>Meeting Day</Text>
@@ -188,16 +197,9 @@ export default function EditClubScreen() {
         style={styles.input}
       />
 
-        <Text style={styles.label}>Add Officer by Email</Text>
-        <TextInput
-            style = {styles.input}
-            value = {officerEmail}
-            onChangeText={setOfficerEmail}
-            placeholder="student@kettering.edu"
-        />
-        <TouchableOpacity style={styles.button} onPress={handleAddOfficer}>
-            <Text style={styles.buttonText}>Add Officer</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleAddOfficer}>
+          <Text style={styles.buttonText}>Add Officer</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleSave}>
         <Text style={styles.buttonText}>Save Changes</Text>

@@ -1,7 +1,7 @@
 ﻿import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, getDocs } from "firebase/firestore";
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
 import { db } from '../../lib/firebase';
@@ -29,22 +29,23 @@ export default function ClubsScreen() {
     const router = useRouter();
     const { user, role } = useContext(AuthContext);
 
-    useEffect(() => {
-        const fetchClubs = async () => {
-        const snapshot = await getDocs(collection(db, "clubs"));
+    useFocusEffect(
+        useCallback(() => {
+            const fetchClubs = async () => {
+                const snapshot = await getDocs(collection(db, "clubs"));
 
-        const clubData: Club[] = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Club, "id">),
-        }));
+                const clubData: Club[] = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...(doc.data() as Omit<Club, "id">),
+                }));
 
-        clubData.sort((a, b) => a.name.localeCompare(b.name));
-        setClubs(clubData);
-        setLoading(false);
-        };
-
-        fetchClubs();
-    }, []);
+                clubData.sort((a, b) => a.name.localeCompare(b.name));
+                setClubs(clubData);
+                setLoading(false);
+            };
+            fetchClubs();
+        }, [])
+    );
 
     const filteredClubs = clubs.filter((club) =>
         club.name.toLowerCase().includes(search.toLowerCase())

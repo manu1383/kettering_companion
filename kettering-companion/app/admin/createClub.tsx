@@ -1,8 +1,7 @@
 import { useRouter } from "expo-router";
-import { doc, setDoc } from "firebase/firestore";
+import { arrayUnion, collection, doc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,36 +17,61 @@ export default function CreateClubScreen() {
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [officerEmail, setOfficerEmail] = useState("");
 
   const router = useRouter();
 
   const handleCreateClub = async () => {
-    if (!name) {
-      Alert.alert("Club name is required.");
-      return;
-    }
-
     try {
-      // Create slug-style ID
+
       const clubId = name.toLowerCase().replace(/\s+/g, "-");
 
+      let officerId = null;
+
+      // Find officer by email
+      if (officerEmail) {
+        const q = query(
+          collection(db, "users"),
+          where("email", "==", officerEmail.toLowerCase())
+        );
+
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+          officerId = snapshot.docs[0].id;
+        } else {
+          alert("Officer email not found.");
+          return;
+        }
+      }
+
+      // Create club
       await setDoc(doc(db, "clubs", clubId), {
         name,
         description,
-        schedule: [{ day: meetingDay, time: meetingTime }],
         location,
-        contactEmail,
-        officers: [],
+        instagram,
+        contactEmail: officerEmail,
+        schedule: [{ day: meetingDay, time: meetingTime }],
+        officers: officerId ? [officerId] : [],
         createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
-      Alert.alert("Club created successfully!");
+      // Promote officer
+      if (officerId) {
+        await updateDoc(doc(db, "users", officerId), {
+          role: "officer",
+          clubsManaging: arrayUnion(clubId),
+        });
+      }
+
+      alert("Club created successfully!");
       router.replace("/(tabs)/clubs");
 
-    } catch (error: any) {
-      console.error(error);
-      Alert.alert("Error creating club.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create club.");
     }
   };
 
@@ -57,6 +81,7 @@ export default function CreateClubScreen() {
 
       <TextInput
         placeholder="Club Name"
+        placeholderTextColor="#888"
         value={name}
         onChangeText={setName}
         style={styles.input}
@@ -64,6 +89,7 @@ export default function CreateClubScreen() {
 
       <TextInput
         placeholder="Description"
+        placeholderTextColor="#888"
         value={description}
         onChangeText={setDescription}
         style={styles.input}
@@ -72,22 +98,33 @@ export default function CreateClubScreen() {
 
       <TextInput
         placeholder="Location"
+        placeholderTextColor="#888"
         value={location}
         onChangeText={setLocation}
         style={styles.input}
       />
 
       <TextInput
-        placeholder="Contact Email"
+        placeholder="Contact Email (publicly visible, also sets officer permissions)"
+        placeholderTextColor="#888"
         value={contactEmail}
         onChangeText={setContactEmail}
         style={styles.input}
+      />
+
+      <TextInput
+        style={styles.input}
+        value={officerEmail}
+        onChangeText={setOfficerEmail}
+        placeholder="Officer's Email (sets permissions)"
+        placeholderTextColor="#888"
       />
 
       <Text style={styles.subHeader}>Meeting Time</Text>
 
       <TextInput
         placeholder="Day (ex: Odd Mondays)"
+        placeholderTextColor="#888"
         value={meetingDay}
         onChangeText={setMeetingDay}
         style={styles.input}
@@ -95,6 +132,7 @@ export default function CreateClubScreen() {
 
       <TextInput
         placeholder="Time (ex: 6:00 PM)"
+        placeholderTextColor="#888"
         value={meetingTime}
         onChangeText={setMeetingTime}
         style={styles.input}

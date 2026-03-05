@@ -32,6 +32,7 @@ export default function AuthScreen() {
   const { setUser } = useContext(AuthContext);
   const router = useRouter();
 
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -124,6 +125,7 @@ export default function AuthScreen() {
 
         try {
           await setDoc(doc(db, "users", userCredential.user.uid), {
+            name: fullName,
             email: email.toLowerCase(),
             role: "student",
             clubsManaging: [],
@@ -172,7 +174,7 @@ export default function AuthScreen() {
     }
   };
 
-  // 🔐 Start Enrollment
+  // Start Enrollment
   const handleEnroll = async () => {
 
     const session =
@@ -189,7 +191,7 @@ export default function AuthScreen() {
     setVerificationId(id);
   };
 
-  // 🔐 Confirm Enrollment
+  // Confirm Enrollment
   const confirmEnrollment = async () => {
 
     const credential =
@@ -206,7 +208,7 @@ export default function AuthScreen() {
     router.replace('/(tabs)/mainCalendar');
   };
 
-  // 🔐 Verify Login Challenge
+  // Verify Login Challenge
   const handleVerifyLogin2FA = async () => {
 
     const credential =
@@ -278,6 +280,19 @@ export default function AuthScreen() {
               placeholder="user@kettering.edu"
               placeholderTextColor="#888"
             />
+            
+            {!isLogin && (
+              <>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  value={fullName}
+                  onChangeText={setFullName}
+                  style={styles.input}
+                  placeholder="John Doe"
+                  placeholderTextColor="#888"
+                />
+              </>
+            )}
 
             <Text style={styles.label}>Password</Text>
             <TextInput
