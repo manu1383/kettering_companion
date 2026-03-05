@@ -20,6 +20,11 @@ interface MeetingTime {
     time: string;
 }
 
+interface Officer {
+    name: string;
+    email: string;
+}
+
 interface Club {
   id: string;
   name: string;
@@ -28,6 +33,7 @@ interface Club {
   location?: string;
   contactEmail?: string;
   instagram?: string;
+  officers?: string[];
 }
 
 /* =============================
@@ -41,6 +47,7 @@ export default function ClubDetailScreen() {
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [officers, setOfficers] = useState<Officer[]>([]);
 
   useEffect(() => {
     const fetchClub = async () => {
@@ -54,10 +61,27 @@ export default function ClubDetailScreen() {
           return;
         }
 
-        setClub({
+        const clubData = {
           id: snapshot.id,
           ...(snapshot.data() as Omit<Club, "id">),
-        });
+        };
+
+        setClub(clubData);
+
+        if (clubData.officers && clubData.officers.length > 0) {
+          const officerData: Officer[] = [];
+
+          for (const uid of clubData.officers) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+
+            if (userDoc.exists()) {
+              officerData.push(userDoc.data() as Officer);
+            }
+          }
+
+          setOfficers(officerData);
+        }
+
       } catch (err) {
         console.error(err);
         setError("Failed to load club.");
@@ -95,7 +119,7 @@ export default function ClubDetailScreen() {
 
       {club.schedule && (
         <>
-          <Text style={styles.sectionTitle}>Meeting Times</Text>
+          <Text style={styles.sectionTitle}>Meeting Times: </Text>
           {club.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
               {m.day} • {m.time}
@@ -106,18 +130,39 @@ export default function ClubDetailScreen() {
 
       {club.location && (
         <>
-          <Text style={styles.sectionTitle}>Location</Text>
+          <Text style={styles.sectionTitle}>Location: </Text>
           <Text>{club.location}</Text>
         </>
       )}
 
       {club.contactEmail && (
-        <Text style={styles.section}>{club.contactEmail}</Text>
+        <>
+          <Text style={styles.sectionTitle}>Contact Email: </Text>
+          <Text style={styles.section}>{club.contactEmail}</Text>
+        </>
       )}
 
       {club.instagram && (
-        <Text style={styles.link}>{club.instagram}</Text>
+        <>
+          <Text style={styles.sectionTitle}>Instagram: </Text>
+          <Text style={styles.link}>{club.instagram}</Text>
+        </>
       )}
+
+      {officers.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Officers:</Text>
+
+          {officers.map((officer, index) => (
+            <View key={index} style={styles.officerCard}>
+              <Text style={styles.officerName}>{officer.name}</Text>
+              <Text style={styles.officerEmail}>{officer.email}</Text>
+            </View>
+          ))}
+        </>
+      )}
+    
+
     </ScrollView>
   );
 }
@@ -174,5 +219,22 @@ const styles = StyleSheet.create({
       color: "#4BA3C7",
       fontWeight: "600",
       marginBottom: 4,
+  },
+  officerCard: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+
+  officerName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1D3D47",
+  },
+
+  officerEmail: {
+    fontSize: 14,
+    color: "#4BA3C7",
   },
 });
