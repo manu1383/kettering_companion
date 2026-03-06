@@ -288,6 +288,7 @@ export default function AuthScreen() {
                 />
               </>
             )}
+            {error ? (<text style={styles.errorText}>{error}</text>) : null}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
