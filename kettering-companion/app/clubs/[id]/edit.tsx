@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { arrayUnion, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,6 +27,12 @@ interface Club {
   officers?: string[];
 }
 
+interface Officer{
+  uid: string;
+  name: string;
+  email: string;
+}
+
 export default function EditClubScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -42,6 +48,7 @@ export default function EditClubScreen() {
   const [day, setDay] = useState("");
   const [time, setTime] = useState("");
   const [officerEmail, setOfficerEmail] = useState("");
+  const [officers, setOfficers] = useState<Officer[]>([]);
 
   useEffect(() => {
     const fetchClub = async () => {
@@ -59,6 +66,24 @@ export default function EditClubScreen() {
         if (data.schedule?.length) {
           setDay(data.schedule[0].day);
           setTime(data.schedule[0].time);
+        }
+        // Load officer details
+        if (data.officers && data.officers.length > 0) {
+
+          const officerData: Officer[] = [];
+
+          for (const uid of data.officers) {
+            const userDoc = await getDoc(doc(db, "users", uid));
+
+            if (userDoc.exists()) {
+              officerData.push({
+                uid,
+                ...(userDoc.data() as { name: string; email: string })
+              });
+            }
+          }
+
+          setOfficers(officerData);
         }
       }
 
@@ -103,6 +128,26 @@ export default function EditClubScreen() {
       schedule: [{ day, time }]
     });
 
+    if (contactEmail) {
+      const q = query(
+        collection(db, "users"),
+        where("email", "==", contactEmail.toLowerCase())
+      );
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const officerDoc = snapshot.docs[0];
+        const officerId = officerDoc.id;
+        // add officer to club
+        await updateDoc(doc(db, "clubs", id as string), {
+          officers: arrayUnion(officerId)
+        });
+        // update user role
+        await updateDoc(doc(db, "users", officerId), {
+          role: "officer",
+          clubsManaging: arrayUnion(id as string)
+        });
+      }
+    }
     router.replace(`/clubs/${id}`);
   };
 
@@ -141,6 +186,38 @@ export default function EditClubScreen() {
     }
   };
 
+  const handleRemoveOfficer = async (uid: string) => {
+    try {
+
+      await updateDoc(doc(db, "clubs", id as string), {
+        officers: arrayRemove(uid)
+      });
+
+      await updateDoc(doc(db, "users", uid), {
+        role: "student"
+      });
+
+      setOfficers((prev) => prev.filter((o) => o.uid !== uid));
+
+    } catch (error) {
+      console.error("Error removing officer:", error);
+      alert("Failed to remove officer.");
+    }
+  };
+
+  const handleDeleteClub = async () => {
+    if (confirm("Are you sure you want to delete this club? This action cannot be undone.")) {
+      try {
+        await deleteDoc(doc(db, "clubs", id as string));
+        alert("Club deleted successfully.");
+        router.replace("/(tabs)/clubs");
+      } catch (error) {
+        console.error("Error deleting club:", error);
+        alert("Failed to delete club. Not proper permissions.");
+      }
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Edit Club</Text>
@@ -174,6 +251,25 @@ export default function EditClubScreen() {
         style={styles.input}
       />
 
+      <Text style={styles.label}>Current Officers</Text>
+
+      {officers.map((officer) => (
+        <View key={officer.uid} style={styles.officerRow}>
+
+          <View>
+            <Text style={styles.officerName}>{officer.name}</Text>
+            <Text style={styles.officerEmail}>{officer.email}</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => handleRemoveOfficer(officer.uid)}
+          >
+            <Text style={styles.removeOfficer}>Remove</Text>
+          </TouchableOpacity>
+
+        </View>
+      ))}
+
       <Text style={styles.label}>Add Officer by Email (sets permissions)</Text>
       <TextInput
           style = {styles.input}
@@ -203,6 +299,10 @@ export default function EditClubScreen() {
 
       <TouchableOpacity style={styles.button} onPress={handleSave}>
         <Text style={styles.buttonText}>Save Changes</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteClub}>
+          <Text style={styles.buttonText}>Delete Club</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -245,5 +345,36 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 16
-  }
+  },
+  officerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 10
+  },
+
+  officerName: {
+    fontWeight: "700",
+    color: "#1D3D47"
+  },
+
+  officerEmail: {
+    color: "#4BA3C7"
+  },
+
+  removeOfficer: {
+    color: "#D64545",
+    fontWeight: "600"
+  },
+
+  deleteButton: {
+    backgroundColor: "#D64545",
+    padding: 15,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 15
+  },
 });

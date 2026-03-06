@@ -85,7 +85,7 @@ export default function ClubsScreen() {
             </Text>
             {canManage && 
                 <TouchableOpacity
-                    style={{ position: "absolute", right: 12, top: 30 }}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
                     onPress={() =>
                         router.push({
                             pathname: "/clubs/[id]/edit",
