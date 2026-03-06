@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -8,7 +8,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { AuthContext } from "../../context/AuthProvider";
 import { db } from "../../lib/firebase";
 
 /* =============================
@@ -21,6 +20,7 @@ interface MeetingTime {
 }
 
 interface Officer {
+    uid: string;
     name: string;
     email: string;
 }
@@ -42,7 +42,6 @@ interface Club {
 
 export default function ClubDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { role } = useContext(AuthContext);
 
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +74,10 @@ export default function ClubDetailScreen() {
             const userDoc = await getDoc(doc(db, "users", uid));
 
             if (userDoc.exists()) {
-              officerData.push(userDoc.data() as Officer);
+              officerData.push({
+                uid,
+                ...(userDoc.data() as Omit<Officer, "uid">),
+              });
             }
           }
 

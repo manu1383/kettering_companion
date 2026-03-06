@@ -108,7 +108,7 @@ export default function AuthScreen() {
           return;
         }
 
-        // 🔐 Force SMS enrollment if none exists
+        // Force SMS enrollment if none exists
         if (multiFactor(userCredential.user).enrolledFactors.length === 0) {
           setUser(userCredential.user);
           setForceEnroll(true);
