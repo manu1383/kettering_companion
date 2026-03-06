@@ -1,0 +1,130 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as Calendar from 'expo-calendar';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { copyCalendar } from '../lib/copyCalendar';
+
+const HOUR_HEIGHT = 60;
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+export default function DaySchedule() {
+  const [events, setEvents] = useState([]);
+  const [now, setNow] = useState(new Date());
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      if (status === 'granted') {
+        const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+        const calendarIds = calendars.map(cal => cal.id);
+
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+
+        const dayEvents = await Calendar.getEventsAsync(calendarIds, start, end);
+        setEvents(dayEvents);
+      }
+    })();
+
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getTimePosition = (dateString) => {
+    const date = new Date(dateString);
+    return date.getHours() * HOUR_HEIGHT +
+      (date.getMinutes() / 60) * HOUR_HEIGHT;
+  };
+
+  const handleCopyCalendar = async () => {
+    try {
+      const result = await copyCalendar("primary", "Kettering Companion");
+      console.log("Copy result:", result.copied);
+      Alert.alert("Success", `Copied ${result.copied} events`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to copy events");
+    }
+  };
+
+  return (
+    <View style={[styles.container, isDark && { backgroundColor: '#000033' }]}>
+      <Text style={[styles.header, isDark && { color: 'white' }]}>
+        Today's Schedule
+      </Text>
+
+      <TouchableOpacity
+        onPress={handleCopyCalendar}
+        style={{
+          backgroundColor: "#007AFF",
+          padding: 10,
+          margin: 10,
+          borderRadius: 6,
+          alignItems: "center"
+        }}
+      >
+        <Text style={{ color: "white", fontWeight: "600" }}>
+          Import Google Calendar
+        </Text>
+      </TouchableOpacity>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {HOURS.map((hour) => (
+          <View key={hour} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
+            <Text style={styles.hourLabel}>{hour}:00</Text>
+            <View style={styles.line} />
+          </View>
+        ))}
+
+        {events.map((event) => {
+          const top = getTimePosition(event.startDate);
+          const start = new Date(event.startDate);
+          const end = new Date(event.endDate);
+          const height = Math.max(
+            (end - start) / (1000 * 60 * 60) * HOUR_HEIGHT,
+            20
+          );
+
+          return (
+            <View key={event.id} style={[styles.eventBox, { top, height }]}>
+              <Text style={styles.eventTitle}>{event.title}</Text>
+            </View>
+          );
+        })}
+
+        <View style={[styles.timeIndicator, { top: getTimePosition(now) }]}>
+          <View style={styles.indicatorCircle} />
+          <View style={styles.indicatorLine} />
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#E6F0FF', paddingTop: 50 },
+  header: { fontSize: 20, textAlign: 'center', marginBottom: 10, fontWeight: 'bold' },
+  scrollContent: { paddingRight: 20, paddingBottom: 50 },
+  hourRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  hourLabel: { width: 60, fontSize: 10, color: '#aaa', textAlign: 'right' },
+  line: { flex: 1, height: 1, backgroundColor: '#f0f0f0' },
+  eventBox: {
+    position: 'absolute',
+    left: 70,
+    right: 10,
+    backgroundColor: 'rgba(0, 122, 255, 0.2)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+    padding: 5,
+    borderRadius: 4,
+    zIndex: 5,
+  },
+  eventTitle: { fontSize: 12, fontWeight: '600', color: '#007AFF' },
+  timeIndicator: { position: 'absolute', left: 60, right: 0, flexDirection: 'row', alignItems: 'center', zIndex: 10 },
+  indicatorLine: { flex: 1, height: 2, backgroundColor: 'red' },
+  indicatorCircle: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'red' },
+});
