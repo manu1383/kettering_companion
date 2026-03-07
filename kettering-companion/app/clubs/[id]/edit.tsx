@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { deleteDoc, doc, getDoc } from "firebase/firestore";
+import { deleteDoc, doc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -10,8 +10,9 @@ import {
   View
 } from "react-native";
 import { db } from "../../../lib/firebase";
-import { addOfficer, findUserByEmail, getClub, removeOfficer, updateClub } from "../../services/clubService";
-import { Club, Officer } from "../../types/club";
+import { addOfficer, findUserByEmail, getClub, removeOfficer, updateClub } from "../../../services/clubService";
+import { getOfficersFromIds } from "../../../services/userService";
+import { Club, Officer } from "../../../types/club";
 
 
 export default function EditClubScreen() {
@@ -34,20 +35,7 @@ export default function EditClubScreen() {
         setDay(data.schedule[0].day);
         setTime(data.schedule[0].time);
       }
-      const officerData: Officer[] = [];
-
-      for (const uid of data?.officers ?? []) {
-
-        const userDoc = await getDoc(doc(db,"users",uid));
-
-        if(userDoc.exists()){
-          officerData.push({
-            uid,
-            ...(userDoc.data() as Omit<Officer,"uid">)
-          });
-        }
-
-      }
+      const officerData = await getOfficersFromIds(data?.officers ?? []);
 
       setOfficers(officerData);
     };

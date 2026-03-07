@@ -3,8 +3,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
-import { getAllClubs } from '../services/clubService';
-import { Club } from '../types/club';
+import { getAllClubs } from '../../services/clubService';
+import { Club } from '../../types/club';
 
 export default function ClubsScreen() {
     const [clubs, setClubs] = useState<Club[]>([]);

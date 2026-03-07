@@ -7,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity
 } from "react-native";
-import { addOfficer, createClub, findUserByEmail } from "../services/clubService";
+import { addOfficer, createClub, findUserByEmail } from "../../services/clubService";
 
 export default function CreateClubScreen() {
   const [name, setName] = useState("");
