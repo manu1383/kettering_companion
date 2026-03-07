@@ -7,8 +7,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { getClub } from "../../services/clubService";
-import { getOfficersFromIds } from "../../services/userService";
+import { ClubService } from "../../services/clubService";
+import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/club";
 
 /* =============================
@@ -27,13 +27,13 @@ export default function ClubDetailScreen() {
 
     const fetchClub = async () => {
 
-      const clubData = await getClub(id as string);
+      const clubData = await ClubService.getClub(id as string);
 
       if (!clubData) return;
 
       setClub(clubData);
 
-      const officerData = await getOfficersFromIds(clubData.officers ?? []);
+      const officerData = await UserService.getOfficersFromIds(clubData.officers ?? []);
 
       setOfficers(officerData);
       setLoading(false);

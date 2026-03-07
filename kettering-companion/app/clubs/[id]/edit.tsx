@@ -10,8 +10,8 @@ import {
   View
 } from "react-native";
 import { db } from "../../../lib/firebase";
-import { addOfficer, findUserByEmail, getClub, removeOfficer, updateClub } from "../../../services/clubService";
-import { getOfficersFromIds } from "../../../services/userService";
+import { ClubService } from "../../../services/clubService";
+import { UserService } from "../../../services/userService";
 import { Club, Officer } from "../../../types/club";
 
 
@@ -27,7 +27,7 @@ export default function EditClubScreen() {
 
   useEffect(() => {
     const loadClub = async () => {
-      const data = await getClub(id as string);
+      const data = await ClubService.getClub(id as string);
       if (data) {
         setClub(data);
       }
@@ -35,7 +35,7 @@ export default function EditClubScreen() {
         setDay(data.schedule[0].day);
         setTime(data.schedule[0].time);
       }
-      const officerData = await getOfficersFromIds(data?.officers ?? []);
+      const officerData = await UserService.getOfficersFromIds(data?.officers ?? []);
 
       setOfficers(officerData);
     };
@@ -43,13 +43,22 @@ export default function EditClubScreen() {
   }, [id]);
 
   const handleSave = async () => {
-    await updateClub(id as string, club!);
+    const updatedClub: Club = {
+      ...club!,
+      schedule:
+        day.trim() && time.trim()
+          ? [{ day: day.trim(), time: time.trim() }]
+          : []
+    };
+
+    await ClubService.updateClub(id as string, updatedClub);
+
     router.replace(`/clubs/${id}`);
   };
 
   const handleAddOfficer = async () => {
 
-    const userDoc = await findUserByEmail(officerEmail);
+    const userDoc = await UserService.findUserByEmail(officerEmail);
 
     if(!userDoc){
       alert("User not found");
@@ -59,7 +68,7 @@ export default function EditClubScreen() {
     const uid = userDoc.id;
     const data = userDoc.data();
 
-    await addOfficer(id as string, uid);
+    await ClubService.addOfficer(id as string, uid);
 
     const newOfficer: Officer = {
       uid,
@@ -74,7 +83,7 @@ export default function EditClubScreen() {
   };
   
   const handleRemoveOfficer = async (uid: string) => {
-    await removeOfficer(id as string, uid);
+    await ClubService.removeOfficer(id as string, uid);
     setOfficers((prev)=>prev.filter(officer=>officer.uid !== uid));
   };
 

@@ -1,25 +1,36 @@
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { Officer } from "../types/club";
 
-export const getOfficersFromIds = async (
-  ids: string[]
-): Promise<Officer[]> => {
+export class UserService {
+  static async findUserByEmail(email: string) {
+      const q = query(
+          collection(db, "users"),
+          where("email", "==", email)
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+      return snapshot.docs[0];
+  };
 
-  const officers = await Promise.all(
-    ids.map(async (uid) => {
+  static async getOfficersFromIds(ids: string[]): Promise<Officer[]> {
 
-      const userDoc = await getDoc(doc(db,"users",uid));
+    const officers = await Promise.all(
+      ids.map(async (uid) => {
 
-      if (!userDoc.exists()) return null;
+        const userDoc = await getDoc(doc(db,"users",uid));
 
-      return {
-        uid,
-        ...(userDoc.data() as Omit<Officer,"uid">)
-      };
+        if (!userDoc.exists()) return null;
 
-    })
-  );
+        return {
+          uid,
+          ...(userDoc.data() as Omit<Officer,"uid">)
+        };
 
-  return officers.filter(Boolean) as Officer[];
-};
+      })
+    );
+
+    return officers.filter(Boolean) as Officer[];
+    
+  };
+}

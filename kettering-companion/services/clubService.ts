@@ -7,68 +7,57 @@ import {
     doc,
     getDoc,
     getDocs,
-    query,
     setDoc,
-    updateDoc,
-    where
+    updateDoc
 } from "firebase/firestore";
 import { Club } from "../types/club";
 
-export const getAllClubs = async (): Promise<Club[]> => {
-    const snapshot = await getDocs(collection(db, "clubs"));
+export class ClubService {
+    static getAllClubs = async (): Promise<Club[]> => {
+        const snapshot = await getDocs(collection(db, "clubs"));
 
-    return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Club, "id">),
-    }));
-};
-
-export const getClub = async (id: string): Promise<Club | null> => {
-    const snapshot = await getDoc(doc(db, "clubs", id));
-
-    if (!snapshot.exists()) return null;
-
-    return {
-        id: snapshot.id,
-        ...(snapshot.data() as Omit<Club, "id">),
+        return snapshot.docs.map(
+            doc => ({ id: doc.id, ...doc.data() })
+        ) as Club[];
     };
-};
 
-export const findUserByEmail = async (email: string) => {
-    const q = query(
-        collection(db, "users"),
-        where("email", "==", email.toLowerCase())
-    );
+    static getClub = async (id: string): Promise<Club | null> => {
+        const ref = doc(db, "clubs", id);
+        const snapshot = await getDoc(ref);
 
-    const snapshot = await getDocs(q);
+        if (!snapshot.exists()) return null;
 
-    if (snapshot.empty) return null;
+        return { id: snapshot.id, ...snapshot.data() } as Club;
+    };
 
-    return snapshot.docs[0];
-};
+    static async createClub(club: Club) {
+        if (!club.id) {
+            throw new Error("Club must have an id");
+        }
+        await setDoc(doc(db, "clubs", club.id), club);
+    };
 
-export const createClub = async (club: Club) => {
-    const clubId = club.name.toLowerCase().replace(/\s+/g, "-");
+    static async updateClub(id: string, data: Partial<Club>) {
+        const ref = doc(db, "clubs", id);
+        await updateDoc(ref, data);
+    };
 
-    await setDoc(doc(db, "clubs", clubId), club);
-};
+    static async deleteClub(id: string) {
+        const ref = doc(db, "clubs", id);
+        await deleteDoc(ref);
+    };
 
-export const updateClub = async (id: string, club: Partial<Club>) => {
-    await updateDoc(doc(db, "clubs", id), club);
-};
+    static async addOfficer(clubId: string, uid: string) {
+        const ref = doc(db, "clubs", clubId);
+        await updateDoc(ref, {
+            officers: arrayUnion(uid)
+        });
+    };
 
-export const deleteClub = async (id: string) => {
-    await deleteDoc(doc(db, "clubs", id));
-};
-
-export const addOfficer = async (clubId: string, uid: string) => {
-    await updateDoc(doc(db, "clubs", clubId), {
-        officers: arrayUnion(uid)
-    });
-};
-
-export const removeOfficer = async (clubId: string, uid: string) => {
-    await updateDoc(doc(db, "clubs", clubId), {
-        officers: arrayRemove(uid)
-    });
-};
+    static async removeOfficer(clubId: string, uid: string) {
+        const ref = doc(db, "clubs", clubId);
+        await updateDoc(ref, {
+            officers: arrayRemove(uid)
+        });
+    };
+}
