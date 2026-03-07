@@ -1,27 +1,14 @@
-import { httpsCallable } from "firebase/functions";
-import { functions } from "./firebaseConfig";
+export async function copyCalendar(userId: string, month: string) {
 
-export interface GoogleCalendarEvent {
-  id: string;
-  summary?: string;
-  start?: {
-    dateTime?: string;
-  };
-  end?: {
-    dateTime?: string;
-  };
-}
+  const url =
+    `https://refreshcalendar-m4xsf223ca-uc.a.run.app` +
+    `?userId=${userId}&month=${month}`;
 
-export async function copyCalendar(
-  date: string,
-  accessToken: string
-) {
-  const copyFn = httpsCallable(functions, "copyCalendarEvents");
+  const res = await fetch(url);
 
-  const result = await copyFn({
-    date,
-    accessToken,
-  });
+  if (!res.ok) {
+    throw new Error("Calendar fetch failed");
+  }
 
-  return result.data as any[];
+  return await res.json();
 }

@@ -10,13 +10,6 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
 }
 
-interface AuthContextType {
-  user: User | null;
-  role: string | null;
-  loading: boolean;
-  setUser: (user: User | null) => void;
-}
-
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,

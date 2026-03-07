@@ -1,47 +1,85 @@
+import cors from "cors";
 import * as admin from "firebase-admin";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import { google } from "googleapis";
 
 admin.initializeApp();
+const db = admin.firestore();
+const corsHandler = cors({ origin: true });
 
-export const copyCalendarEvents = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+const auth = new google.auth.GoogleAuth({
+  scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+});
 
-  const { accessToken, date } = request.data;
+export const refreshCalendar = onRequest((req, res) => {
+  corsHandler(req, res, async () => {
 
-  if (!accessToken) {
-    throw new HttpsError("invalid-argument", "Missing Google access token");
-  }
+    const userId =
+      typeof req.query.userId === "string" ? req.query.userId : undefined;
 
-  if (!date) {
-    throw new HttpsError("invalid-argument", "Missing date parameter");
-  }
+    const month =
+      typeof req.query.month === "string" ? req.query.month : undefined;
 
-  const start = `${date}T00:00:00-05:00`;
-  const end = `${date}T23:59:59-05:00`;
+    if (!userId || !month) {
+      res.status(400).send("Missing parameters");
+      return;
+    }
 
-  try {
-    // Use OAuth2 client (NOT service account)
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      res.status(404).send("User not found");
+      return;
+    }
+
+    const email = userDoc.data()?.email;
+
+    if (!email) {
+      res.status(400).send("User has no calendar email");
+      return;
+    }
+
+    const cacheRef = userRef.collection("calendarCache").doc(month);
+    const cacheDoc = await cacheRef.get();
+
+    const now = Date.now();
+
+    if (cacheDoc.exists) {
+      const lastUpdated = cacheDoc.data()?.lastUpdated?.toMillis?.();
+
+      if (lastUpdated && now - lastUpdated < 10 * 60 * 1000) {
+        res.json(cacheDoc.data());
+        return;
+      }
+    }
 
     const calendar = google.calendar({ version: "v3", auth });
 
-    const response = await calendar.events.list({
-      calendarId: "primary",
-      timeMin: start,
-      timeMax: end,
-      singleEvents: true,
-      orderBy: "startTime",
-      timeZone: "America/New_York",
-    });
+    const start = new Date(`${month}-01`);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
 
-    return response.data.items || [];
+    try {
 
-  } catch (error: any) {
-    console.error("GOOGLE ERROR:", error);
-    throw new HttpsError("internal", error.message);
-  }
+      const events = await calendar.events.list({
+        calendarId: email,
+        timeMin: start.toISOString(),
+        timeMax: end.toISOString(),
+        singleEvents: true,
+        orderBy: "startTime",
+      });
+
+      await cacheRef.set({
+        events: events.data.items,
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      res.json(events.data.items);
+
+    } catch (error) {
+      console.error("Calendar fetch failed:", error);
+      res.status(500).send("Calendar fetch failed");
+    }
+  });
 });
