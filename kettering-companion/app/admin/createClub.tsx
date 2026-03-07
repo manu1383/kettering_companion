@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router";
-import { arrayUnion, collection, doc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -8,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity
 } from "react-native";
-import { db } from "../../lib/firebase";
+import { addOfficer, createClub, findUserByEmail } from "../services/clubService";
 
 export default function CreateClubScreen() {
   const [name, setName] = useState("");
@@ -23,56 +22,24 @@ export default function CreateClubScreen() {
   const router = useRouter();
 
   const handleCreateClub = async () => {
-    try {
-
-      const clubId = name.toLowerCase().replace(/\s+/g, "-");
-
-      let officerId = null;
-
-      // Find officer by email
-      if (officerEmail) {
-        const q = query(
-          collection(db, "users"),
-          where("email", "==", officerEmail.toLowerCase())
-        );
-
-        const snapshot = await getDocs(q);
-
-        if (!snapshot.empty) {
-          officerId = snapshot.docs[0].id;
-        } else {
-          alert("Officer email not found.");
-          return;
-        }
+    const clubId = name.toLowerCase().replace(/\s+/g, "-");
+    await createClub({
+      id: clubId,
+      name,
+      description,
+      location,
+      contactEmail,
+      instagram,
+      schedule: meetingDay && meetingTime ? [{ day: meetingDay, time: meetingTime }] : [],
+      officers: officerEmail ? [officerEmail] : []
+    });
+    if (officerEmail) {
+      const userDoc = await findUserByEmail(officerEmail);
+      if (userDoc) {
+        await addOfficer(clubId, userDoc.id);
       }
-
-      // Create club
-      await setDoc(doc(db, "clubs", clubId), {
-        name,
-        description,
-        location,
-        instagram,
-        contactEmail: officerEmail,
-        schedule: [{ day: meetingDay, time: meetingTime }],
-        officers: officerId ? [officerId] : [],
-        createdAt: new Date(),
-      });
-
-      // Promote officer
-      if (officerId) {
-        await updateDoc(doc(db, "users", officerId), {
-          role: "officer",
-          clubsManaging: arrayUnion(clubId),
-        });
-      }
-
-      alert("Club created successfully!");
-      router.replace("/(tabs)/clubs");
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create club.");
     }
+    router.push(`/(tabs)/clubs`);
   };
 
   return (

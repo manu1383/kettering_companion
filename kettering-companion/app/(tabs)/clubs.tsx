@@ -1,25 +1,10 @@
 ﻿import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { collection, getDocs } from "firebase/firestore";
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
-import { db } from '../../lib/firebase';
-
-interface MeetingTime {
-    day: string;
-    time: string;
-}
-
-interface Club {
-    id: string;
-    name: string;
-    description: string;
-    location: string;
-    contactEmail: string;
-    schedule: MeetingTime[];
-    officers: string[];
-}
+import { getAllClubs } from '../services/clubService';
+import { Club } from '../types/club';
 
 export default function ClubsScreen() {
     const [clubs, setClubs] = useState<Club[]>([]);
@@ -32,15 +17,9 @@ export default function ClubsScreen() {
     useFocusEffect(
         useCallback(() => {
             const fetchClubs = async () => {
-                const snapshot = await getDocs(collection(db, "clubs"));
-
-                const clubData: Club[] = snapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...(doc.data() as Omit<Club, "id">),
-                }));
-
-                clubData.sort((a, b) => a.name.localeCompare(b.name));
-                setClubs(clubData);
+                const data = await getAllClubs();
+                data.sort((a, b) => a.name.localeCompare(b.name));
+                setClubs(data);
                 setLoading(false);
             };
             fetchClubs();
@@ -68,7 +47,7 @@ export default function ClubsScreen() {
             onPress={() =>
             router.push({
                 pathname: "/clubs/[id]",
-                params: { id: item.id },
+                params: { id: item.id! },
             })
             }
         >
@@ -81,7 +60,7 @@ export default function ClubsScreen() {
             )}
 
             <Text style={styles.schedule}>
-            {[scheduleText, item.location].filter(Boolean).join(" • ")}
+                {[scheduleText, item.location].filter(Boolean).join(" • ")}
             </Text>
             {canManage && 
                 <TouchableOpacity
@@ -89,7 +68,7 @@ export default function ClubsScreen() {
                     onPress={() =>
                         router.push({
                             pathname: "/clubs/[id]/edit",
-                            params: { id: item.id },
+                            params: { id: item.id! },
                         })
                     }
                 >
@@ -138,7 +117,7 @@ export default function ClubsScreen() {
             )}
             <FlatList
                 data={filteredClubs}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id!}
                 renderItem={renderClub}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={

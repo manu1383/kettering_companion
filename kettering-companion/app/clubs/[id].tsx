@@ -9,32 +9,8 @@ import {
   View,
 } from "react-native";
 import { db } from "../../lib/firebase";
-
-/* =============================
-   Type Definition
-============================= */
-
-interface MeetingTime {
-    day: string;
-    time: string;
-}
-
-interface Officer {
-    uid: string;
-    name: string;
-    email: string;
-}
-
-interface Club {
-  id: string;
-  name: string;
-  description?: string;
-  schedule?: MeetingTime[];
-  location?: string;
-  contactEmail?: string;
-  instagram?: string;
-  officers?: string[];
-}
+import { getClub } from "../services/clubService";
+import { Club, Officer } from "../types/club";
 
 /* =============================
    Component
@@ -53,17 +29,12 @@ export default function ClubDetailScreen() {
       try {
         if (!id) return;
 
-        const snapshot = await getDoc(doc(db, "clubs", id as string));
+        const clubData = await getClub(id as string);
 
-        if (!snapshot.exists()) {
+        if (!clubData) {
           setError("Club not found.");
           return;
         }
-
-        const clubData = {
-          id: snapshot.id,
-          ...(snapshot.data() as Omit<Club, "id">),
-        };
 
         setClub(clubData);
 
