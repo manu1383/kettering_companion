@@ -66,6 +66,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="log-out" size={28} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Logout',
+          tabBarIcon: ({ color }) => <Ionicons size={28} name="log-out" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
