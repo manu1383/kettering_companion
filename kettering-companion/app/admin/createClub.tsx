@@ -1,6 +1,5 @@
-import { UserService } from "@/services/userService";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity
 } from "react-native";
 import { ClubService } from "../../services/clubService";
+import { UserService } from "../../services/userService";
 
 export default function CreateClubScreen() {
   const [name, setName] = useState("");

@@ -1,4 +1,3 @@
-import { db } from "@/lib/firebase";
 import {
     arrayRemove,
     arrayUnion,
@@ -10,6 +9,7 @@ import {
     setDoc,
     updateDoc
 } from "firebase/firestore";
+import { db } from "../lib/firebase";
 import { Club } from "../types/club";
 
 export class ClubService {
