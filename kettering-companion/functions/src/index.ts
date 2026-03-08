@@ -5,11 +5,98 @@ import { google } from "googleapis";
 
 admin.initializeApp();
 const db = admin.firestore();
+
 const corsHandler = cors({ origin: true });
 
-const auth = new google.auth.GoogleAuth({
-  scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
-});
+class CalendarService {
+
+  private calendar;
+
+  constructor() {
+    const auth = new google.auth.GoogleAuth({
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+
+    this.calendar = google.calendar({ version: "v3", auth });
+  }
+
+  async getUserEmail(userId: string) {
+
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      throw new Error("User not found");
+    }
+
+    const email = userDoc.data()?.email;
+
+    if (!email) {
+      throw new Error("User has no calendar email");
+    }
+
+    return email;
+  }
+
+  async getCachedCalendar(userId: string, month: string) {
+
+    const cacheRef = db
+      .collection("users")
+      .doc(userId)
+      .collection("calendarCache")
+      .doc(month);
+
+    const cacheDoc = await cacheRef.get();
+
+    if (!cacheDoc.exists) return null;
+
+    const lastUpdated = cacheDoc.data()?.lastUpdated?.toMillis?.();
+
+    if (!lastUpdated) return null;
+
+    const now = Date.now();
+
+    if (now - lastUpdated < 10 * 60 * 1000) {
+      return cacheDoc.data();
+    }
+
+    return null;
+  }
+
+  async fetchCalendarEvents(email: string, month: string) {
+
+    const start = new Date(`${month}-01`);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+
+    const events = await this.calendar.events.list({
+      calendarId: email,
+      timeMin: start.toISOString(),
+      timeMax: end.toISOString(),
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return events.data.items;
+  }
+
+  async cacheCalendar(userId: string, month: string, events: any) {
+
+    const cacheRef = db
+      .collection("users")
+      .doc(userId)
+      .collection("calendarCache")
+      .doc(month);
+
+    await cacheRef.set({
+      events,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+}
+
+const calendarService = new CalendarService();
 
 export const refreshCalendar = onRequest((req, res) => {
   corsHandler(req, res, async () => {
@@ -25,61 +112,27 @@ export const refreshCalendar = onRequest((req, res) => {
       return;
     }
 
-    const userRef = db.collection("users").doc(userId);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      res.status(404).send("User not found");
-      return;
-    }
-
-    const email = userDoc.data()?.email;
-
-    if (!email) {
-      res.status(400).send("User has no calendar email");
-      return;
-    }
-
-    const cacheRef = userRef.collection("calendarCache").doc(month);
-    const cacheDoc = await cacheRef.get();
-
-    const now = Date.now();
-
-    if (cacheDoc.exists) {
-      const lastUpdated = cacheDoc.data()?.lastUpdated?.toMillis?.();
-
-      if (lastUpdated && now - lastUpdated < 10 * 60 * 1000) {
-        res.json(cacheDoc.data());
-        return;
-      }
-    }
-
-    const calendar = google.calendar({ version: "v3", auth });
-
-    const start = new Date(`${month}-01`);
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
-
     try {
 
-      const events = await calendar.events.list({
-        calendarId: email,
-        timeMin: start.toISOString(),
-        timeMax: end.toISOString(),
-        singleEvents: true,
-        orderBy: "startTime",
-      });
+      const cached = await calendarService.getCachedCalendar(userId, month);
 
-      await cacheRef.set({
-        events: events.data.items,
-        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
-      });
+      if (cached) {
+        res.json(cached);
+        return;
+      }
 
-      res.json(events.data.items);
+      const email = await calendarService.getUserEmail(userId);
+
+      const events = await calendarService.fetchCalendarEvents(email, month);
+
+      await calendarService.cacheCalendar(userId, month, events);
+
+      res.json(events);
 
     } catch (error) {
       console.error("Calendar fetch failed:", error);
       res.status(500).send("Calendar fetch failed");
     }
+
   });
 });
