@@ -1,11 +1,9 @@
- import { Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { blue } from 'react-native-reanimated/lib/typescript/Colors';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -28,13 +26,6 @@ export default function TabLayout() {
             },
       }}>
       <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Logout',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.right.square" color={color} />,
-        }}
-      />
-      <Tabs.Screen
               name="mainCalendar"
               options={{
                   title: 'Main Calendar',
@@ -56,9 +47,9 @@ export default function TabLayout() {
         }}
           />
       <Tabs.Screen
-        name="events"
+        name="clubs"
         options={{
-            title: 'Events',
+            title: 'Clubs',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
         }}
       />
@@ -67,6 +58,13 @@ export default function TabLayout() {
         options={{
             title: 'Classes',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="graduationcap.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Logout',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.right.square" color={color} />,
         }}
       />
     </Tabs>

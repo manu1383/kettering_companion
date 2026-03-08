@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword
 } from 'firebase/auth';
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -23,7 +24,7 @@ import {
   View
 } from 'react-native';
 import { AuthContext } from '../context/AuthProvider';
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 
 export default function AuthScreen() {
 
@@ -31,6 +32,7 @@ export default function AuthScreen() {
   const { setUser } = useContext(AuthContext);
   const router = useRouter();
 
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -67,7 +69,7 @@ export default function AuthScreen() {
     ]).start();
   }, []);
 
-  // ✅ Correct reCAPTCHA setup (Web Only)
+  // Correct reCAPTCHA setup (Web Only)
   useEffect(() => {
     if (!recaptchaRef.current) {
       recaptchaRef.current = new RecaptchaVerifier(
@@ -106,7 +108,7 @@ export default function AuthScreen() {
           return;
         }
 
-        // 🔐 Force SMS enrollment if none exists
+        // Force SMS enrollment if none exists
         if (multiFactor(userCredential.user).enrolledFactors.length === 0) {
           setUser(userCredential.user);
           setForceEnroll(true);
@@ -114,13 +116,27 @@ export default function AuthScreen() {
         }
 
         setUser(userCredential.user);
-        router.replace('/(tabs)/explore');
+        router.replace('/(tabs)/mainCalendar');
 
       } else {
 
         const userCredential =
           await createUserWithEmailAndPassword(auth, email, password);
 
+        try {
+          await setDoc(doc(db, "users", userCredential.user.uid), {
+            name: fullName,
+            email: email.toLowerCase(),
+            role: "student",
+            clubsManaging: [],
+            createdAt: serverTimestamp(),
+          });
+
+          console.log("User document created successfully");
+        } catch (err) {
+          console.error("Failed to create user document:", err);
+        }
+        
         await sendEmailVerification(userCredential.user);
 
         alert("Verification email sent. Please verify before logging in.");
@@ -158,7 +174,7 @@ export default function AuthScreen() {
     }
   };
 
-  // 🔐 Start Enrollment
+  // Start Enrollment
   const handleEnroll = async () => {
 
     const session =
@@ -175,7 +191,7 @@ export default function AuthScreen() {
     setVerificationId(id);
   };
 
-  // 🔐 Confirm Enrollment
+  // Confirm Enrollment
   const confirmEnrollment = async () => {
 
     const credential =
@@ -189,10 +205,10 @@ export default function AuthScreen() {
       "Primary Phone"
     );
 
-    router.replace('/(tabs)/explore');
+    router.replace('/(tabs)/mainCalendar');
   };
 
-  // 🔐 Verify Login Challenge
+  // Verify Login Challenge
   const handleVerifyLogin2FA = async () => {
 
     const credential =
@@ -204,7 +220,7 @@ export default function AuthScreen() {
     await resolver.resolveSignIn(assertion);
 
     setUser(auth.currentUser);
-    router.replace('/(tabs)/explore');
+    router.replace('/(tabs)/mainCalendar');
   };
 
   const handleForgotPassword = async () => {
@@ -261,9 +277,22 @@ export default function AuthScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               style={styles.input}
-              placeholder="you@example.com"
+              placeholder="user@kettering.edu"
               placeholderTextColor="#888"
             />
+            
+            {!isLogin && (
+              <>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  value={fullName}
+                  onChangeText={setFullName}
+                  style={styles.input}
+                  placeholder="John Doe"
+                  placeholderTextColor="#888"
+                />
+              </>
+            )}
 
             <Text style={styles.label}>Password</Text>
             <TextInput
