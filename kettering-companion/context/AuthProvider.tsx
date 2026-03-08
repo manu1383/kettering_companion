@@ -1,14 +1,7 @@
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User } from "@firebase/auth";
 import { arrayUnion, collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
-import React, { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import { auth, db } from "../lib/firebase";
-
-interface AuthContextType {
-  user: User | null;
-  role: string | null;
-  loading: boolean;
-  setUser: (user: User | null) => void;
-}
 
 interface AuthContextType {
   user: User | null;

@@ -1,6 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -8,9 +7,9 @@ import {
   Text,
   View,
 } from "react-native";
-import { db } from "../../lib/firebase";
-import { getClub } from "../services/clubService";
-import { Club, Officer } from "../types/club";
+import { ClubService } from "../../services/clubService";
+import { UserService } from "../../services/userService";
+import { Club, Officer } from "../../types/club";
 
 /* =============================
    Component
@@ -25,45 +24,23 @@ export default function ClubDetailScreen() {
   const [officers, setOfficers] = useState<Officer[]>([]);
 
   useEffect(() => {
+
     const fetchClub = async () => {
-      try {
-        if (!id) return;
 
-        const clubData = await getClub(id as string);
+      const clubData = await ClubService.getClub(id as string);
 
-        if (!clubData) {
-          setError("Club not found.");
-          return;
-        }
+      if (!clubData) return;
 
-        setClub(clubData);
+      setClub(clubData);
 
-        if (clubData.officers && clubData.officers.length > 0) {
-          const officerData: Officer[] = [];
+      const officerData = await UserService.getOfficersFromIds(clubData.officers ?? []);
 
-          for (const uid of clubData.officers) {
-            const userDoc = await getDoc(doc(db, "users", uid));
-
-            if (userDoc.exists()) {
-              officerData.push({
-                uid,
-                ...(userDoc.data() as Omit<Officer, "uid">),
-              });
-            }
-          }
-
-          setOfficers(officerData);
-        }
-
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load club.");
-      } finally {
-        setLoading(false);
-      }
+      setOfficers(officerData);
+      setLoading(false);
     };
 
     fetchClub();
+
   }, [id]);
 
   if (loading) {

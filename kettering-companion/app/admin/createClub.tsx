@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -7,7 +7,8 @@ import {
   TextInput,
   TouchableOpacity
 } from "react-native";
-import { addOfficer, createClub, findUserByEmail } from "../services/clubService";
+import { ClubService } from "../../services/clubService";
+import { UserService } from "../../services/userService";
 
 export default function CreateClubScreen() {
   const [name, setName] = useState("");
@@ -16,27 +17,27 @@ export default function CreateClubScreen() {
   const [meetingTime, setMeetingTime] = useState("");
   const [location, setLocation] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [instagram, setInstagram] = useState("");
   const [officerEmail, setOfficerEmail] = useState("");
 
   const router = useRouter();
 
   const handleCreateClub = async () => {
+    console.log ("Meeting day: ", meetingDay);
+    console.log ("Meeting time: ", meetingTime);
     const clubId = name.toLowerCase().replace(/\s+/g, "-");
-    await createClub({
+    await ClubService.createClub({
       id: clubId,
       name,
       description,
       location,
       contactEmail,
-      instagram,
       schedule: meetingDay && meetingTime ? [{ day: meetingDay, time: meetingTime }] : [],
       officers: officerEmail ? [officerEmail] : []
     });
     if (officerEmail) {
-      const userDoc = await findUserByEmail(officerEmail);
+      const userDoc = await UserService.findUserByEmail(officerEmail);
       if (userDoc) {
-        await addOfficer(clubId, userDoc.id);
+        await ClubService.addOfficer(clubId, userDoc.id);
       }
     }
     router.push(`/(tabs)/clubs`);
