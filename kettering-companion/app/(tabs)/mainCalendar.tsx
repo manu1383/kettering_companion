@@ -1,11 +1,9 @@
-﻿import { useColorScheme } from "@/hooks/use-color-scheme";
+﻿import { AuthContext } from "@/context/AuthProvider";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
 import { useRouter } from "expo-router";
-import * as AuthSession from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { MiniMap } from "./maps/MiniMap";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -15,6 +13,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from "react-native";
+import { MiniMap } from "./maps/MiniMap";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -34,126 +33,91 @@ export default function DaySchedule() {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [infoVisible, setInfoVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { user } = useContext(AuthContext);
+
   const colorScheme = useColorScheme();
   const isLight = colorScheme === "light";
+  const isDark = colorScheme === "dark";
+  const textColor = isDark ? "#fff" : "#000";
 
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme: "ketteringcompanion",
-    path: "redirect",
-  });
+  const normalizeGoogleEvent = (event: any): CalendarEvent | null => {
+      let startDate: Date;
+      let endDate: Date;
+      let isAllDay = false;
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: "537697026527-1escunuj1p6aoillsqhtpfa8qackvc9i.apps.googleusercontent.com",
-    iosClientId: "537697026527-14mvdca5rnjnnu39ieguf3rgkkr426qd.apps.googleusercontent.com",
-    scopes: [
-      "https://www.googleapis.com/auth/calendar.readonly"
-    ],
-  });
-
-  console.log('REDIRECT URI:', redirectUri);
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const token = response.authentication?.accessToken;
-      console.log("GOOGLE TOKEN:", token);
-      if (token) {
-        setAccessToken(token);
+      if (event.start?.dateTime && event.end?.dateTime) {
+          startDate = new Date(event.start.dateTime);
+          endDate = new Date(event.end.dateTime);
+      } else if (event.start?.date && event.end?.date) {
+          startDate = new Date(event.start.date);
+          endDate = new Date(event.end.date);
+          isAllDay = true;
+      } else {
+          return null;
       }
-    }
-  }, [response]);
 
-   const normalizeGoogleEvent = (event: any): CalendarEvent | null => {
-        let startDate: Date;
-        let endDate: Date;
-        let isAllDay = false;
+      const title = event.summary || "Untitled Event";
+      const room = event.location || undefined;
+      const lower = title.toLowerCase();
 
-        if (event.start?.dateTime && event.end?.dateTime) {
-            startDate = new Date(event.start.dateTime);
-            endDate = new Date(event.end.dateTime);
-        } else if (event.start?.date && event.end?.date) {
-            startDate = new Date(event.start.date);
-            endDate = new Date(event.end.date);
-            isAllDay = true;
-        } else {
-            return null;
-        }
+      let type: CalendarEvent["type"] = "School";
 
-        const title = event.summary || "Untitled Event";
-        const room = event.location || undefined;
-        const lower = title.toLowerCase();
+  if (lower.includes("gym"))
+      type = "Fitness";
+  else if (lower.includes("club"))
+      type = "Club";
+  else if (lower.includes("event"))
+      type = "SchoolEvent";
 
-        let type: CalendarEvent["type"] = "School";
-
-    if (lower.includes("gym"))
-        type = "Fitness";
-    else if (lower.includes("club"))
-        type = "Club";
-    else if (lower.includes("event"))
-        type = "SchoolEvent";
-
-        return {
-            id: event.id,
-            title,
-            startDate,
-            endDate,
-            allDay: isAllDay,
-            type,
-            room,
-        };
-    };
+      return {
+          id: event.id,
+          title,
+          startDate,
+          endDate,
+          allDay: isAllDay,
+          type,
+          room,
+      };
+  };
 
   async function handleImport() {
-    try 
-    {
-        if (!accessToken) {
-            if (!request) return;
-            await promptAsync();
-            return;
-        }
+    try {
+      if (!user) return;
 
-        setLoading(true);
+      setLoading(true);
 
-        const formattedDate =
-            selectedDate.getFullYear() + "-" +
-            String(selectedDate.getMonth() + 1).padStart(2, "0") + "-" +
-            String(selectedDate.getDate()).padStart(2, "0");
+      const month =
+        selectedDate.getFullYear() + "-" +
+        String(selectedDate.getMonth() + 1).padStart(2, "0");
 
-        const googleEvents = await copyCalendar(formattedDate, accessToken);
+      console.log("Fetching calendar for:", user.uid, month);
 
-        const parsedEvents = googleEvents
-            .map(normalizeGoogleEvent)
-            .filter(Boolean) as CalendarEvent[];
+      const response = await copyCalendar(user.uid, month);
 
-        setEvents(parsedEvents);
-        setErrorMessage(null);
+      console.log("Fetched events:", response);
 
-    } 
-    catch (error: any) 
-    {
-        console.error("Import failed:", error);
-        setErrorMessage(error?.message || "Failed to load calendar events.");
-    } 
-    finally 
-    {
-        setLoading(false);
+      const googleEvents = Array.isArray(response)
+        ? response
+        : response.events || [];
+      
+      const parsedEvents = googleEvents
+        .map(normalizeGoogleEvent)
+        .filter(Boolean);
+
+      setEvents(parsedEvents);
+
+    } catch (error) {
+      console.error("Calendar import failed:", error);
+      setInfoVisible(true);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-
-  // 
-  // Initial load
-  // 
-  useEffect(() => {
-    handleImport();
-  }, [selectedDate, accessToken]);
-
-  // 
-  // Position helper
-  // 
   const getTimePosition = (dateString: string | Date) => {
     const date = new Date(dateString);
     const hours = date.getHours();
@@ -165,18 +129,66 @@ export default function DaySchedule() {
     const prevDate = new Date(selectedDate);
     prevDate.setDate(prevDate.getDate() - 1);
     setSelectedDate(prevDate);
-  }
+  };
 
   const goToNextDay = () => {
     const nextDate = new Date(selectedDate);
     nextDate.setDate(nextDate.getDate() + 1);
     setSelectedDate(nextDate);
+  };
+
+  const eventsForDay = events.filter(event => {
+    const start = new Date(event.startDate);
+    const end = new Date(event.endDate);
+
+    const dayStart = new Date(selectedDate);
+    dayStart.setHours(0,0,0,0);
+
+    const dayEnd = new Date(selectedDate);
+    dayEnd.setHours(23,59,59,999);
+
+    return start <= dayEnd && end >= dayStart;
+  });
+
+  function assignEventTiers(events: any[]) {
+    const sorted = [...events].sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() -
+        new Date(b.startDate).getTime()
+    );
+    const tiers: any[][] = [];
+    sorted.forEach(event => {
+      let placed = false;
+      for (let i = 0; i < tiers.length; i++) {
+        const tier = tiers[i];
+        const conflict = tier.some(existing => {
+          const startA = new Date(event.startDate).getTime();
+          const endA = new Date(event.endDate).getTime();
+          const startB = new Date(existing.startDate).getTime();
+          const endB = new Date(existing.endDate).getTime();
+          return startA < endB && endA > startB;
+        });
+
+        if (!conflict) {
+          tier.push(event);
+          event.tier = i;
+          placed = true;
+          break;
+        }
+      }
+
+      if (!placed) {
+        event.tier = tiers.length;
+        tiers.push([event]);
+      }
+    });
+    return sorted;
   }
 
-  const allDayEvents = events.filter(e => e.allDay);
-  const timedEvents = events.filter(e => !e.allDay);
-  const today = new Date();
+  const allDayEvents = eventsForDay.filter(e => e.allDay);
+  const timedEvents = assignEventTiers(eventsForDay.filter(e => !e.allDay));
 
+  const today = new Date();
   const isToday =
     selectedDate.getDate() === today.getDate() &&
     selectedDate.getMonth() === today.getMonth() &&
@@ -266,42 +278,44 @@ export default function DaySchedule() {
     year: "numeric",
   });
 
-  
+  //Color mapping for each type w/ default
+  const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+      School: 
+      {
+          bg: "rgba(0, 122, 255, 0.2)",
+          border: "#007AFF",
+          text: "#0056b3",
+      },
+      Fitness: 
+      {
+          bg: "rgba(175, 82, 222, 0.2)",
+          border: "#AF52DE",
+          text: "#7a399b",
+      },
+      Club: 
+      {
+          bg: "rgba(52, 199, 89, 0.2)",
+          border: "#34C759",
+          text: "#1e7b32",
+      },
+      SchoolEvent: 
+      {
+          bg: "rgba(255, 149, 0, 0.2)",
+          border: "#FF9500",
+          text: "#b36800",
+      },
+      Default: 
+      {
+          bg: "rgba(128,128,128,0.2)",
+          border: "#8E8E93",
+          text: "#555",
+      },
+  };
 
-    //Color mapping for each type w/ default
-    const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-        School: 
-        {
-            bg: "rgba(0, 122, 255, 0.2)",
-            border: "#007AFF",
-            text: "#0056b3",
-        },
-        Fitness: 
-        {
-            bg: "rgba(175, 82, 222, 0.2)",
-            border: "#AF52DE",
-            text: "#7a399b",
-        },
-        Club: 
-        {
-            bg: "rgba(52, 199, 89, 0.2)",
-            border: "#34C759",
-            text: "#1e7b32",
-        },
-        SchoolEvent: 
-        {
-            bg: "rgba(255, 149, 0, 0.2)",
-            border: "#FF9500",
-            text: "#b36800",
-        },
-        Default: 
-        {
-            bg: "rgba(128,128,128,0.2)",
-            border: "#8E8E93",
-            text: "#555",
-        },
-    };
-    //STFTODO Define Colors from above
+  useEffect(() => {
+    if (!user) return;
+    handleImport();
+  }, [selectedDate, user]);
 
   return (
     <View style={[styles.container, { backgroundColor: isLight ? '#FFFFFF' : '#121212' }]}>
@@ -313,15 +327,9 @@ export default function DaySchedule() {
          <Text style={[styles.dateHeader, { color: isLight ? '#000' : '#FFF' }]}>{formattedDate}</Text>
 
          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            
             {/* Help button with (i) icon */}
             <TouchableOpacity onPress={() => setInfoVisible(true)} style={styles.iconPadding}>
                 <Text style={{ fontSize: 22, color: isLight ? '#007AFF' : '#0A84FF' }}>ⓘ</Text>
-            </TouchableOpacity>
-
-            {/*Refresh calendar button */}
-            <TouchableOpacity onPress={handleImport} style={styles.iconPadding}>
-                <Text style={styles.infoButton}>🔄</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={goToNextDay}>
@@ -344,12 +352,6 @@ export default function DaySchedule() {
                 </Text>
             </View>
         )}
-
-      {loading && (
-        <Text style={{textAlign: "center", marginBottom: 10}}>
-          Loading events...
-        </Text>
-      )}
 
       
 
@@ -477,32 +479,34 @@ export default function DaySchedule() {
       >
         <TouchableWithoutFeedback onPress={() => setInfoVisible(false)}>
           <View style={styles.modalOverlay}>
-            
-            {/* Prevent tap inside modal from closing */}
             <TouchableWithoutFeedback>
-              <View style={[styles.modalContent, isLight && { backgroundColor: "#ffffff" }]}>
-                <Text style={styles.modalTitle}>About This Calendar</Text>
+              <View style={[
+                styles.modalContent,
+                isLight && { backgroundColor: "#ffffff" }
+              ]}>
+                <Text style={[styles.modalTitle]}>
+                  About This Calendar
+                </Text>
 
-                <Text style={styles.modalText}>
-                  In order to import your Google Calendar, you need to share your calendar with this email address:
-                  "calendar-sync@kettering-connect.iam.gserviceaccount.com"
-                  and set permissions to "Make changes to events". This allows the app to read your calendar events and display them here. Your data is not stored or shared with anyone else. You can revoke access at any time from your Google Calendar settings.
+                <Text style={[styles.modalText]}>
+                  Share your Google Calendar with
+                  537697026527-compute@developer.gserviceaccount.com
+                  to allow event syncing.
 
-                  Left and Right arrows change the day.
-                  🔄 reloads the calendar.
-                  Click an event to see the name, time, location, minimap.
-
+                  Use the arrows to navigate days, and tap events for details.
                 </Text>
 
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setInfoVisible(false)}
                 >
-                  <Text style={styles.closeButtonText}>Close</Text>
+                  <Text style={styles.closeButtonText}>
+                    Close
+                  </Text>
                 </TouchableOpacity>
+
               </View>
             </TouchableWithoutFeedback>
-
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -579,26 +583,16 @@ export default function DaySchedule() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#E6F0FF", paddingTop: 50 },
-  header: {
-    fontSize: 20,
-    textAlign: "center",
-    marginBottom: 10,
-    fontWeight: "bold",
-  },
-  scrollContent: { paddingBottom: 50 },
+  container: { flex: 1, paddingTop: 50 },
+  scrollContent: { paddingBottom: 20 },
   hourRow: { flexDirection: "row", alignItems: "flex-start" },
-  hourLabel: {
-    width: 60,
-    fontSize: 10,
-    color: "#aaa",
-    textAlign: "right",
-    paddingRight: 10,
-    marginTop: -8,
-  },
-  line: { flex: 1, height: 1, backgroundColor: "#f0f0f0" },
+  hourLabel: { width: 60, fontSize: 10, textAlign: "right", paddingRight: 10 },
+  line: { flex: 1, height: 1, backgroundColor: "#eee" },
   eventBox: {
     position: "absolute",
+    left: 70,
+    right: 10,
+    backgroundColor: "rgba(0,122,255,0.2)",
     borderLeftWidth: 4,
     borderLeftColor: "#007AFF",
     padding: 5,
@@ -612,8 +606,6 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     alignItems: "center",
-    zIndex: 10,
-    pointerEvents: "none",
   },
   indicatorLine: { flex: 1, height: 2, backgroundColor: "red" },
   indicatorCircle: {
@@ -623,44 +615,22 @@ const styles = StyleSheet.create({
     backgroundColor: "red",
     marginLeft: -4,
   },
-  clearButton: {
-    flex: 1,
-    backgroundColor: "#D9534F",
-    marginBottom: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    paddingVertical: 12,
-    justifyContent: "center",
-    height: 40
-  },
-  clearButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginHorizontal: 40,
-    marginBottom: 10,
-  },
   headerRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
-    marginTop: 10,
     paddingHorizontal: 20,
   },
-  arrow: {
-    fontSize: 22,
-    fontWeight: "bold"
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
   },
-  allDayContainer: {
-    marginLeft: 70,
-    marginBottom: 10,
-  },
+  arrow: { fontSize: 22, fontWeight: "bold" },
+  dateHeader: { fontSize: 20, fontWeight: "bold" },
+  allDayContainer: { marginLeft: 70, marginBottom: 10 },
   allDayEvent: {
-    backgroundColor: "rgba(0, 122, 255, 0.15)",
+    backgroundColor: "rgba(0,122,255,0.15)",
     borderLeftWidth: 4,
     borderLeftColor: "#007AFF",
     padding: 6,
@@ -703,20 +673,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#007AFF",
     padding: 10,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: "center"
   },
-  closeButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  dateHeader: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#000000"
-  },
-  
   iconPadding: {
     paddingHorizontal: 8,
-    },
-  
+  },
+  closeButtonText: { color: "white", fontWeight: "bold" },
+  noEventsOverlay: {
+      position: 'absolute',
+      top: 120,
+      left: 0,
+      right: 0,
+      textAlign: 'center',
+      zIndex: 50,
+  },
+  noEvents: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#888',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      paddingHorizontal: 15,
+      paddingVertical: 10,
+      borderRadius: 8,
+  }
 });

@@ -1,9 +1,9 @@
-﻿import { View, Text, StyleSheet } from 'react-native';
+﻿import { StyleSheet, Text, View } from 'react-native';
 
 export default function EventsScreen() {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Upcoming Events</Text>
+            <Text style={styles.title}> Events</Text>
         </View>
     );
 }

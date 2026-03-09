@@ -1,14 +1,19 @@
- import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 import React from 'react';
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';//STF This leads to a single line of code, could this be replaced directly?
-import { blue } from 'react-native-reanimated/lib/typescript/Colors';
+import { HapticTab } from '../../components/haptic-tab';
+import { useColorScheme } from '../../hooks/use-color-scheme';
+import { requestNotificationPermissions } from '../services/notifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  React.useEffect(() => {
+    // Request notification permissions on app load
+    requestNotificationPermissions();
+  }, []);
+
   // name is for internal usage, title is for user view
   return (
     <Tabs
@@ -27,45 +32,52 @@ export default function TabLayout() {
             },
       }}>
       <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Logout',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.right.square" color={color} />,
-        }}
-      />
-      <Tabs.Screen
               name="mainCalendar"
               options={{
                   title: 'Main Calendar',
-                  tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
+                  tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
               }}
           />
       <Tabs.Screen
               name="maps"
               options={{
                   title: 'Maps',
-                  tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
+                  tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
               }}
           />
       <Tabs.Screen
         name="fitness"
         options={{
             title: 'Fitness',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="dumbbell.fill" color={color} />,
+            tabBarIcon: ({ color }) => <Ionicons name="barbell" size={28} color={color} />,
         }}
           />
+      <Tabs.Screen
+        name="clubs"
+        options={{
+            title: 'Clubs',
+            tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={28} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="events"
         options={{
             title: 'Events',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+            tabBarIcon: ({ color }) => <Ionicons name="school" size={28} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="classes"
+        name="notifications"
         options={{
-            title: 'Classes',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="graduationcap.fill" color={color} />,
+            title: 'Notifications',
+            tabBarIcon: ({ color }) => <Ionicons name="notifications" size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Logout',
+          tabBarIcon: ({ color }) => <Ionicons name="log-out" size={28}color={color} />,
         }}
       />
     </Tabs>
