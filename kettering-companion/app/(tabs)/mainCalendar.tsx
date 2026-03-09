@@ -12,7 +12,6 @@ import {
   Dimensions,
   View
 } from "react-native";
-import { saveEvents } from '../services/calendarStorage';
 import { scheduleEventNotification } from '../services/notifications';
 
 const HOUR_HEIGHT = 60;
@@ -27,6 +26,7 @@ export default function DaySchedule() {
 
   const colorScheme = useColorScheme();
   const isLight = colorScheme === "light";
+  const isDark = colorScheme === "dark";
 
   const normalizeGoogleEvent = (event: any) => {
     let startDate: Date;
@@ -307,6 +307,7 @@ export default function DaySchedule() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 50 },
+  scrollContent: { paddingBottom: 20 },
   hourRow: { flexDirection: "row", alignItems: "flex-start" },
   hourLabel: { width: 60, fontSize: 10, textAlign: "right", paddingRight: 10 },
   line: { flex: 1, height: 1, backgroundColor: "#eee" },
@@ -341,6 +342,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
   },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
   arrow: { fontSize: 22, fontWeight: "bold" },
   dateHeader: { fontSize: 20, fontWeight: "bold" },
   infoButton: { fontSize: 20, marginHorizontal: 10 },
@@ -369,7 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center"
   },
-  closeButtonText: { color: "white", fontWeight: "bold" }
+  closeButtonText: { color: "white", fontWeight: "bold" },
     noEventsOverlay: {
         position: 'absolute',
         top: 120,

@@ -71,7 +71,7 @@ export default function AuthScreen() {
 
   // Correct reCAPTCHA setup (Web Only)
   useEffect(() => {
-    if (!recaptchaRef.current) {
+    if (Platform.OS === "web" && !recaptchaRef.current) {
       recaptchaRef.current = new RecaptchaVerifier(
         auth,
         "recaptcha-container",
@@ -239,8 +239,9 @@ export default function AuthScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
 
-      <div id="recaptcha-container" style={{ display: "none" }}></div>
-
+      {Platform.OS === "web" && (
+       <View id="recaptcha-container" style={{ display: "none" }} />
+      )}
       <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
         <Text style={styles.appName}>Kettering Companion</Text>
       </Animated.View>
