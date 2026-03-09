@@ -3,10 +3,17 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { HapticTab } from '../../components/haptic-tab';
 import { useColorScheme } from '../../hooks/use-color-scheme';
+import { requestNotificationPermissions } from '../services/notifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  React.useEffect(() => {
+    // Request notification permissions on app load
+    requestNotificationPermissions();
+  }, []);
+
   // name is for internal usage, title is for user view
   return (
     <Tabs
@@ -64,6 +71,13 @@ export default function TabLayout() {
         options={{
           title: 'Logout',
           tabBarIcon: ({ color }) => <Ionicons name="log-out" size={28}color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+            title: 'Notifications',
+            tabBarIcon: ({ color }) => <Ionicons name="notifications" size={28} color={color} />,
         }}
       />
     </Tabs>

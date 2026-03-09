@@ -1,4 +1,4 @@
-﻿import { AuthContext } from "@/context/AuthProvider";
+import { AuthContext } from "@/context/AuthProvider";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
 import React, { useContext, useEffect, useState } from "react";
@@ -9,8 +9,11 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  Dimensions,
   View
 } from "react-native";
+import { saveEvents } from '../services/calendarStorage';
+import { scheduleEventNotification } from '../services/notifications';
 
 const HOUR_HEIGHT = 60;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -193,63 +196,27 @@ export default function DaySchedule() {
     handleImport();
   }, [selectedDate, user]);
 
-  return (
-    <View style={[styles.container, { backgroundColor: "#ffffff" }]}>
-      
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={goToPreviousDay}>
-          <Text style={styles.arrow}>◀</Text>
-        </TouchableOpacity>
+    return (
+         <View style={[styles.container, isDark && { backgroundColor: '#000033' }]}>
+            <Text style={[styles.header, isDark && { color: 'white' }]}>Today's Schedule</Text>
+            
+            {/*No Events Overlay*/}
+            {events.length === 0 && (
+                <View style={styles.noEventsOverlay}>
+                    <Text style={styles.noEvents}>No events scheduled for today.</Text>
+                </View>
+            )}   
 
-        <Text style={styles.dateHeader}>
-          {formattedDate}
-        </Text>
-
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity onPress={goToNextDay}>
-            <Text style={styles.arrow}>▶</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {loading && (
-        <Text style={{ textAlign: "center", marginBottom: 10 }}>
-          Loading events...
-        </Text>
-      )}
-
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingBottom: 50,
-          minHeight: HOUR_HEIGHT * 24,
-        }}
-      >
-
-        {allDayEvents.length > 0 && (
-          <View style={styles.allDayContainer}>
-            {allDayEvents.map(event => (
-              <View key={event.id} style={styles.allDayEvent}>
-                <Text style={styles.allDayText}>{event.title}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {HOURS.map(hour => (
-          <View key={hour} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
-            <Text style={styles.hourLabel}>
-              {hour === 12
-                ? "12 PM"
-                : hour > 12
-                ? `${hour - 12} PM`
-                : hour === 0
-                ? "12 AM"
-                : `${hour} AM`}
-            </Text>
-            <View style={styles.line} />
-          </View>
-        ))}
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                {/* Background Grid as Hour Sections */}
+                {HOURS.map((hour) => (
+                    <View key={hour} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
+                        <Text style={styles.hourLabel}>
+                            {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : hour === 0 ? '12 AM' : `${hour} AM`}
+                        </Text>
+                        <View style={styles.line} />
+                    </View>
+                ))}
 
         {timedEvents.map(event => {
           const top = getTimePosition(event.startDate);
@@ -403,4 +370,21 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   closeButtonText: { color: "white", fontWeight: "bold" }
+    noEventsOverlay: {
+        position: 'absolute',
+        top: 120,
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        zIndex: 50,
+    },
+    noEvents: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#888',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        borderRadius: 8,
+    }
 });
