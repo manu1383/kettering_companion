@@ -2,6 +2,8 @@
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import * as Calendar from 'expo-calendar';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { saveEvents } from '../services/calendarStorage';
+import { scheduleEventNotification } from '../services/notifications';
 
 const HOUR_HEIGHT = 60; // 1 hour is 60 pixels
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -27,6 +29,10 @@ export default function DaySchedule() {
 
                 const dayEvents = await Calendar.getEventsAsync(calendarIds, start, end);
                 setEvents(dayEvents);
+
+                dayEvents.forEach(event => {
+                    scheduleEventNotification(event);
+                })
             }
         })();
 
@@ -34,7 +40,7 @@ export default function DaySchedule() {
         const interval = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
-
+    
     // Convert a Date object to vertical pixels
     const getTimePosition = (dateString) => {
         const date = new Date(dateString);
@@ -47,6 +53,13 @@ export default function DaySchedule() {
          <View style={[styles.container, isDark && { backgroundColor: '#000033' }]}>
             <Text style={[styles.header, isDark && { color: 'white' }]}>Today's Schedule</Text>
             
+            {/*No Events Overlay*/}
+            {events.length === 0 && (
+                <View style={styles.noEventsOverlay}>
+                    <Text style={styles.noEvents}>No events scheduled for today.</Text>
+                </View>
+            )}   
+
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {/* Background Grid as Hour Sections */}
                 {HOURS.map((hour) => (
@@ -116,4 +129,21 @@ const styles = StyleSheet.create({
     },
     indicatorLine: { flex: 1, height: 2, backgroundColor: 'red' },
     indicatorCircle: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'red', marginLeft: -4 },
+    noEventsOverlay: {
+        position: 'absolute',
+        top: 120,
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        zIndex: 50,
+    },
+    noEvents: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#888',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        borderRadius: 8,
+    }
 });

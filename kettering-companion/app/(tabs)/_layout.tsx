@@ -6,10 +6,17 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { blue } from 'react-native-reanimated/lib/typescript/Colors';
+import { requestNotificationPermissions } from '../services/notifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  React.useEffect(() => {
+    // Request notification permissions on app load
+    requestNotificationPermissions();
+  }, []);
+
   // name is for internal usage, title is for user view
   return (
     <Tabs
@@ -67,6 +74,13 @@ export default function TabLayout() {
         options={{
             title: 'Classes',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="graduationcap.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+            title: 'Notifications',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="bell.fill" color={color} />,
         }}
       />
     </Tabs>

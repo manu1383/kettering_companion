@@ -1,6 +1,7 @@
 import {db, auth} from '../firebase';
 import { collection, addDoc, getDocs, Timestamp, doc} from 'firebase/firestore';
 
+
 export const saveEvents = async (events: any[]) => {
     
     const user = auth.currentUser;
@@ -8,6 +9,7 @@ export const saveEvents = async (events: any[]) => {
 
     const eventsRef = collection(db, 'users', user.uid, 'events');
 
+    //Iterate through events and save each one to Firestore
     for (const event of events) {
         await addDoc(eventsRef, {
             title: event.title,
