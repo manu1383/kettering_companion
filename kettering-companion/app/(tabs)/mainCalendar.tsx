@@ -1,4 +1,4 @@
-import { AuthContext } from "@/context/AuthProvider";
+﻿import { AuthContext } from "@/context/AuthProvider";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
 import React, { useContext, useEffect, useState } from "react";
@@ -9,10 +9,8 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Dimensions,
   View
 } from "react-native";
-import { scheduleEventNotification } from '../services/notifications';
 
 const HOUR_HEIGHT = 60;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -27,6 +25,9 @@ export default function DaySchedule() {
   const colorScheme = useColorScheme();
   const isLight = colorScheme === "light";
   const isDark = colorScheme === "dark";
+  const textColor = isDark ? "#fff" : "#000";
+  const secondaryText =  isDark ? "#ccc" : "#555";
+  const backgroundColor = isDark ? "#000033" : "#f0f0f0";
 
   const normalizeGoogleEvent = (event: any) => {
     let startDate: Date;
@@ -127,58 +128,37 @@ export default function DaySchedule() {
   });
 
   function assignEventTiers(events: any[]) {
-
     const sorted = [...events].sort(
       (a, b) =>
         new Date(a.startDate).getTime() -
         new Date(b.startDate).getTime()
     );
-
     const tiers: any[][] = [];
-
     sorted.forEach(event => {
-
       let placed = false;
-
       for (let i = 0; i < tiers.length; i++) {
-
         const tier = tiers[i];
-
         const conflict = tier.some(existing => {
-
           const startA = new Date(event.startDate).getTime();
           const endA = new Date(event.endDate).getTime();
-
           const startB = new Date(existing.startDate).getTime();
           const endB = new Date(existing.endDate).getTime();
-
           return startA < endB && endA > startB;
-
         });
 
         if (!conflict) {
-
           tier.push(event);
-
           event.tier = i;
-
           placed = true;
           break;
-
         }
-
       }
 
       if (!placed) {
-
         event.tier = tiers.length;
-
         tiers.push([event]);
-
       }
-
     });
-
     return sorted;
   }
 
@@ -197,8 +177,22 @@ export default function DaySchedule() {
   }, [selectedDate, user]);
 
     return (
-         <View style={[styles.container, isDark && { backgroundColor: '#000033' }]}>
-            <Text style={[styles.header, isDark && { color: 'white' }]}>Today's Schedule</Text>
+         <View style={[styles.container, { backgroundColor }]}>
+            <View style={styles.headerRow}>
+              <TouchableOpacity onPress={goToPreviousDay}>
+                <Text style={[styles.arrow, { color: textColor }]}>◀</Text>
+              </TouchableOpacity>
+
+              <Text style={[styles.dateHeader, { color: textColor }]}>
+                {formattedDate}
+              </Text>
+
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity onPress={goToNextDay}>
+                  <Text style={[styles.arrow, { color: textColor }]}>▶</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             
             {/*No Events Overlay*/}
             {events.length === 0 && (
@@ -211,7 +205,7 @@ export default function DaySchedule() {
                 {/* Background Grid as Hour Sections */}
                 {HOURS.map((hour) => (
                     <View key={hour} style={[styles.hourRow, { height: HOUR_HEIGHT }]}>
-                        <Text style={styles.hourLabel}>
+                        <Text style={[styles.hourLabel, { color: secondaryText }]}>
                             {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : hour === 0 ? '12 AM' : `${hour} AM`}
                         </Text>
                         <View style={styles.line} />
@@ -276,11 +270,11 @@ export default function DaySchedule() {
                 styles.modalContent,
                 isLight && { backgroundColor: "#ffffff" }
               ]}>
-                <Text style={styles.modalTitle}>
+                <Text style={[styles.modalTitle, { color: textColor }]}>
                   About This Calendar
                 </Text>
 
-                <Text style={styles.modalText}>
+                <Text style={[styles.modalText, { color: textColor }]}>
                   Share your Google Calendar with
                   537697026527-compute@developer.gserviceaccount.com
                   to allow event syncing.
