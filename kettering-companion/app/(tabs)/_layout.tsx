@@ -1,62 +1,83 @@
- import { Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { blue } from 'react-native-reanimated/lib/typescript/Colors';
+import { Ionicons } from '@expo/vector-icons';
+import { HapticTab } from '../../components/haptic-tab';
+import { useColorScheme } from '../../hooks/use-color-scheme';
+import { requestNotificationPermissions } from '../services/notifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
+  React.useEffect(() => {
+    // Request notification permissions on app load
+    requestNotificationPermissions();
+  }, []);
+
+  // name is for internal usage, title is for user view
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
+          tabBarStyle: 
+            {
+                backgroundColor: isDark ? '#00008B' : '#0000FF', // Dark Blue / Blue
+            },
+            tabBarActiveTintColor: isDark ? '#B8860B' : '#FFD700', // Dark Gold / Gold
+            tabBarInactiveTintColor: isDark ? '#555' : '#ccc',
+            headerShown: false,
+            tabBarButton: HapticTab,
+            sceneStyle: 
+            {
+                backgroundColor: isDark ? '#000033' : '#E6F0FF', // Adjust for readability
+            },
       }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
       <Tabs.Screen
               name="mainCalendar"
               options={{
                   title: 'Main Calendar',
-                  tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
+                  tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
               }}
           />
       <Tabs.Screen
               name="maps"
               options={{
                   title: 'Maps',
-                  tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
+                  tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
               }}
           />
       <Tabs.Screen
         name="fitness"
         options={{
             title: 'Fitness',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="dumbbell.fill" color={color} />,
+            tabBarIcon: ({ color }) => <Ionicons name="barbell" size={28} color={color} />,
         }}
           />
+      <Tabs.Screen
+        name="clubs"
+        options={{
+            title: 'Clubs',
+            tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={28} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="events"
         options={{
             title: 'Events',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+            tabBarIcon: ({ color }) => <Ionicons name="school" size={28} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="classes"
+        name="notifications"
         options={{
-            title: 'Classes',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="graduationcap.fill" color={color} />,
+            title: 'Notifications',
+            tabBarIcon: ({ color }) => <Ionicons name="notifications" size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Logout',
+          tabBarIcon: ({ color }) => <Ionicons name="log-out" size={28}color={color} />,
         }}
       />
     </Tabs>

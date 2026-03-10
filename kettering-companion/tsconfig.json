@@ -5,8 +5,11 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
-    }
+      ],
+    },
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler",
   },
   "include": [
     "**/*.ts",
