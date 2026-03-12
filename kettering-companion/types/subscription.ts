@@ -19,3 +19,13 @@ export interface Club {
     schedule: MeetingTime[];
     officers?: string[];
 }
+
+export interface Event {
+    id?: string;
+    name: string;
+    description?: string;
+    location?: string;
+    contactEmail: string;
+    schedule: MeetingTime[];
+    attendees?: string[];
+}

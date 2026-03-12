@@ -1,15 +1,15 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
-import { Club, Officer } from "../../types/club";
+import { Club, Officer } from "../../types/subscription";
 
 /* =============================
    Component

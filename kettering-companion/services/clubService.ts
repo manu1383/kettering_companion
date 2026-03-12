@@ -10,7 +10,7 @@ import {
     updateDoc
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Club } from "../types/club";
+import { Club } from "../types/subscription";
 
 export class ClubService {
     static getAllClubs = async (): Promise<Club[]> => {

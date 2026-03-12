@@ -2,17 +2,17 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { db } from "../../../lib/firebase";
 import { ClubService } from "../../../services/clubService";
 import { UserService } from "../../../services/userService";
-import { Club, Officer } from "../../../types/club";
+import { Club, Officer } from "../../../types/subscription";
 
 
 export default function EditClubScreen() {

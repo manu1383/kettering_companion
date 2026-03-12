@@ -4,7 +4,7 @@ import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
 import { ClubService } from '../../services/clubService';
-import { Club } from '../../types/club';
+import { Club } from '../../types/subscription';
 
 export default function ClubsScreen() {
     const [clubs, setClubs] = useState<Club[]>([]);
@@ -67,7 +67,7 @@ export default function ClubsScreen() {
                     style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
                     onPress={() =>
                         router.push({
-                            pathname: "/clubs/[id]/edit",
+                            pathname: "/clubs/[id]/editClub",
                             params: { id: item.id! },
                         })
                     }
