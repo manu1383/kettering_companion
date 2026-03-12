@@ -8,6 +8,7 @@ import {
     getDocs,
     query,
     setDoc,
+    addDoc,
     updateDoc,
     where
 } from "firebase/firestore";
@@ -71,5 +72,17 @@ export const addOfficer = async (clubId: string, uid: string) => {
 export const removeOfficer = async (clubId: string, uid: string) => {
     await updateDoc(doc(db, "clubs", clubId), {
         officers: arrayRemove(uid)
+    });
+};
+
+export const subscribeToClub = async (clubId: string, uid: string) => {
+    await updateDoc(doc(db, "users", uid), {
+        subscribedClubs: arrayUnion(clubId)
+    });
+};
+
+export const unsubscribeFromClub = async (clubId: string, uid: string) => {
+    await updateDoc(doc(db, "users", uid), {
+        subscribedClubs: arrayRemove(clubId)
     });
 };
