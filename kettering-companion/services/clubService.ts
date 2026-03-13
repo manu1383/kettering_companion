@@ -60,4 +60,17 @@ export class ClubService {
             officers: arrayRemove(uid)
         });
     };
+
+    static subscribeToClub = async (uid: string, clubId: string) => {
+        await setDoc(
+            doc(db, "users", uid, "subscriptions", clubId),
+            { clubId }
+        );
+    };
+
+    static unsubscribeFromClub = async (uid: string, clubId: string) => {
+        await deleteDoc(
+            doc(db, "users", uid, "subscriptions", clubId)
+        );
+    };
 }

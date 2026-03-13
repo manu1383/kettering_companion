@@ -5,8 +5,6 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpac
 import { AuthContext } from '../../context/AuthProvider';
 import { ClubService } from '../../services/clubService';
 import { Club } from '../../types/club';
-import { subscribeToClub } from '../services/clubService';
-import { unsubscribeFromClub } from '../services/clubService';
 
 export default function ClubsScreen() {
     const [clubs, setClubs] = useState<Club[]>([]);
@@ -31,18 +29,6 @@ export default function ClubsScreen() {
     const filteredClubs = clubs.filter((club) =>
         club.name.toLowerCase().includes(search.toLowerCase())
     );
-        const toggleSubscription = async (clubId: string, subscribe: boolean) => {
-        try {
-            if (subscribe) {
-                await subscribeToClub(user!.uid, clubId);
-            } else {
-                await unsubscribeFromClub(user!.uid, clubId);
-            }
-        } catch (err) {
-            console.error("Subscription error:", err);
-            setError("Failed to update subscription. Please try again.");
-        }
-    }
     
     const renderClub = ({ item }: { item: Club }) => {
         const scheduleText =
@@ -54,8 +40,6 @@ export default function ClubsScreen() {
             item.officers?.includes(user?.uid ?? "");
 
         const canManage = role === "admin" || isOfficer;
-
-        const isSubscribed = subscribedClubs.includes(item.id!);
 
         return (
         <TouchableOpacity
@@ -91,15 +75,6 @@ export default function ClubsScreen() {
                     <Feather name="edit-2" size={20} color="#4BA3C7" />
                 </TouchableOpacity>
             }
-
-            <TouchableOpacity
-                style={styles.subscribeButton}
-                onPress={() => toggleSubscription(item.id!, !isSubscribed)}
-            >
-                <Text style={styles.subscribeButtonText}>
-                    {isSubscribed ? "Unsubscribe" : "Subscribe"}
-                </Text>
-            </TouchableOpacity>
         </TouchableOpacity>
         );
     };

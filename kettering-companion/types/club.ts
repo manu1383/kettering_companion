@@ -18,4 +18,5 @@ export interface Club {
     instagram?: string;
     schedule: MeetingTime[];
     officers?: string[];
+    subscribers?: string[];
 }

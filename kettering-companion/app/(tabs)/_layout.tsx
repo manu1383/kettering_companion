@@ -1,9 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { HapticTab } from '../../components/haptic-tab';
 import { useColorScheme } from '../../hooks/use-color-scheme';
-import { requestNotificationPermissions } from '../services/notifications';
+import { requestNotificationPermissions } from '../../services/notifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
