@@ -1,4 +1,4 @@
-﻿import { getWeekdayName } from '@/lib/time';
+﻿import { formatFrequency, getPluralWeekday, to12Hour } from '@/lib/time';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
@@ -34,8 +34,7 @@ export default function ClubsScreen() {
     const renderClub = ({ item }: { item: Club }) => {
         const scheduleText =
             item.schedule
-                ?.map((m) => `${getWeekdayName(m.weekday)} ${m.frequency} ${m.startTime} - ${m.endTime}`)
-                .join(" • ") ?? "";
+                ?.map((m) => `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
         
         const isOfficer =
             item.officers?.includes(user?.uid ?? "");

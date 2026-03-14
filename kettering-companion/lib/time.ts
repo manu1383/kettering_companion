@@ -20,16 +20,15 @@ export function to24Hour(time12h: string): string {
   return `${hours.toString().padStart(2, "0")}:${minutes}`;
 }
 
-export function to12Hour(time24: string): string {
-  const [hoursStr, minutes] = time24.split(":");
+export function to12Hour(time?: string) {
+  if (!time) return "";
 
-  let hours = parseInt(hoursStr, 10);
-  const suffix = hours >= 12 ? "PM" : "AM";
+  const [hour, minute] = time.split(":").map(Number);
 
-  hours = hours % 12;
-  if (hours === 0) hours = 12;
+  const period = hour >= 12 ? "PM" : "AM";
+  const adjustedHour = hour % 12 || 12;
 
-  return `${hours}:${minutes} ${suffix}`;
+  return `${adjustedHour}:${minute.toString().padStart(2, "0")} ${period}`;
 }
 
 export function parseTime(time: string): string | null {
@@ -63,3 +62,30 @@ export const WEEKDAYS = [
 export function getWeekdayName(day: number) {
   return WEEKDAYS[day] ?? "Unknown";
 }
+
+export function formatFrequency(freq: string) {
+  switch (freq) {
+    case "weekly":
+      return "Weekly";
+    case "biweekly":
+      return "Biweekly";
+    case "monthly":
+      return "Monthly";
+    default:
+      return freq;
+  }
+};
+
+export function getPluralWeekday(weekday: number) {
+  const days = [
+    "Sundays",
+    "Mondays",
+    "Tuesdays",
+    "Wednesdays",
+    "Thursdays",
+    "Fridays",
+    "Saturdays"
+  ];
+
+  return days[weekday] ?? "";
+};
