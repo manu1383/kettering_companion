@@ -1,6 +1,10 @@
 export interface MeetingTime {
-    day: string;
-    time: string;
+    weekday: number;
+    frequency: "weekly" | "biweekly" | "monthly";
+    startDate: string;
+    endDate: string;
+    startTime: string;
+    endTime: string;
 }
 
 export interface Officer {
@@ -9,14 +13,8 @@ export interface Officer {
     email: string;
 }
 
-export interface Club {
-    id?: string;
-    name: string;
-    description?: string;
-    location?: string;
-    contactEmail: string;
+export interface Club extends Event{
     instagram?: string;
-    schedule: MeetingTime[];
     officers?: string[];
 }
 

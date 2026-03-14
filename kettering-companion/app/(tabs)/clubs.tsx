@@ -1,4 +1,5 @@
-﻿import { Feather } from '@expo/vector-icons';
+﻿import { getWeekdayName } from '@/lib/time';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -32,9 +33,9 @@ export default function ClubsScreen() {
 
     const renderClub = ({ item }: { item: Club }) => {
         const scheduleText =
-        item.schedule
-            ?.map((m) => `${m.day} ${m.time}`)
-            .join(" • ") ?? "";
+            item.schedule
+                ?.map((m) => `${getWeekdayName(m.weekday)} ${m.frequency} ${m.startTime} - ${m.endTime}`)
+                .join(" • ") ?? "";
         
         const isOfficer =
             item.officers?.includes(user?.uid ?? "");

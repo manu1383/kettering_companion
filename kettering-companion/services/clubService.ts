@@ -12,6 +12,7 @@ import {
 import { db } from "../lib/firebase";
 import { Club } from "../types/subscription";
 
+
 export class ClubService {
     static getAllClubs = async (): Promise<Club[]> => {
         const snapshot = await getDocs(collection(db, "clubs"));
@@ -59,5 +60,25 @@ export class ClubService {
         await updateDoc(ref, {
             officers: arrayRemove(uid)
         });
+    };
+
+    static async createMeetings(club: any, meetings: any[]) {
+        for (const meeting of meetings) {
+            const dateString =
+                meeting.date.getFullYear() +
+                "-" +
+                String(meeting.date.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(meeting.date.getDate()).padStart(2, "0");
+            const ref = doc(collection(db, "meetings"), `${club.id}-${dateString}`);
+            await setDoc(ref, {
+                clubId: club.id,
+                clubName: club.name,
+                date: dateString,
+                startTime: meeting.startTime,
+                endTime: meeting.endTime,
+                location: club.location ?? ""
+            });
+        }
     };
 }
