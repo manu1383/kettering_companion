@@ -10,8 +10,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { BUILDINGS, ROOM_INDEX , validateRoom} from "./maps/buildings";
+import { BUILDINGS, ROOM_INDEX, validateRoom } from "./maps/buildings";
 import { useContainedImageLayout } from "./maps/useContainedImageLayout";
+type Layout = ReturnType<typeof useContainedImageLayout>;
 
 export default function MapScreen() {
     const generalKUMap = require("../../assets/images/KU_Updated_parking_Map_JAN2024-2.jpg");
@@ -25,7 +26,7 @@ export default function MapScreen() {
         backBg: isDark ? "#222" : "#FFF",
         backText: isDark ? "#FFF" : "#1E3A8A",
     };
-    //STFTODO redefine colors
+
     const params = useLocalSearchParams();
     const room = typeof params.room === "string" ? params.room : undefined;
 
@@ -38,22 +39,56 @@ export default function MapScreen() {
     const campusLayout = useContainedImageLayout();
     const floorLayout = useContainedImageLayout();
 
-    useEffect(() => {
-        if (!room) return;
+    const DEBUG_ROOMS = true;
 
-        const match = validateRoom(room);
+    const roomKey =  room ? room.toUpperCase().trim().replace(/\s+/g, "") : null;
+    const roomData = roomKey ? ROOM_INDEX[roomKey] : null;
+    const match = room ? validateRoom(room) : null;
+
+    useEffect(() => 
+    {
         if (!match) return;
 
         setSelectedBuilding(match.buildingKey);
         setFloorIndex(match.floorIndex);
-    }, [room]);
+    }, 
+        [match]);
+
+    
+
+    function pixelRoomToScreen(
+        layout: Layout,
+        floor: 
+        {
+            imageWidth: number;
+            imageHeight: number;
+        },
+        x: number,
+        y: number
+    ) 
+    {
+        const normalizedX = x / floor.imageWidth;
+
+        // Flip Y axis, y=0 starts @ top of image
+        const normalizedY = 1 - (y / floor.imageHeight);
+
+        return {
+            left: layout.offsetX + normalizedX * layout.displayWidth,
+            top: layout.offsetY + normalizedY * layout.displayHeight
+        };
+    }
+
+    
 
     return (
         <View style={[styles.container, { paddingBottom: insets.bottom }]}>
             <Text style={styles.title}>Map View</Text>
 
             {!selectedBuilding && (
-                <View style={styles.mapContainer} onLayout={campusLayout.onContainerLayout}>
+                <View
+                    style={styles.mapContainer}
+                    onLayout={campusLayout.onContainerLayout}
+                >
                     <Image
                         source={generalKUMap}
                         style={campusLayout.imageStyle}
@@ -97,7 +132,10 @@ export default function MapScreen() {
                         </Text>
                     </Pressable>
 
-                    <View style={{ flex: 1 }} onLayout={floorLayout.onContainerLayout}>
+                    <View
+                        style={{ flex: 1 }}
+                        onLayout={floorLayout.onContainerLayout}
+                    >
                         <Image
                             source={floor.image}
                             style={floorLayout.imageStyle}
@@ -105,32 +143,122 @@ export default function MapScreen() {
                             onLoad={floorLayout.onImageLoad}
                         />
 
+                        {floorLayout.displayWidth > 0 && (
+                            <>
+                                {/* Room Marker */}
+                                {roomData &&
+                                    match &&
+                                    selectedBuilding === match.buildingKey &&
+                                    floorIndex === match.floorIndex && (() => {
+
+                                        const pos = pixelRoomToScreen(
+                                            floorLayout,
+                                            floor,
+                                            roomData.x,
+                                            roomData.y
+                                        );
+
+                                        return (
+                                            <View
+                                                style={{
+                                                    position: "absolute",
+                                                    ...pos,
+                                                    transform: [
+                                                        { translateX: -16 },
+                                                        { translateY: -16 },
+                                                    ],
+                                                }}
+                                            >
+                                                <Ionicons
+                                                    name="star"
+                                                    size={32}
+                                                    color="red"
+                                                />
+                                            </View>
+                                        );
+                                    })()}
+
+                                {/* DEBUG ROOM DOTS */}
+                                {DEBUG_ROOMS &&
+                                    Object.entries(ROOM_INDEX).map(([key, r]) => {
+                                        if (r.floorIndex !== floorIndex) return null;
+                                        if (r.buildingKey !== selectedBuilding) return null;
+
+                                            const pos =
+                                                pixelRoomToScreen(
+                                                    floorLayout,
+                                                    floor,
+                                                    r.x,
+                                                    r.y
+                                                );
+
+                                            return (
+                                                <View
+                                                    key={key}
+                                                    style={{
+                                                        position:
+                                                            "absolute",
+                                                        ...pos,
+                                                        transform: [
+                                                            {
+                                                                translateX: -3,
+                                                            },
+                                                            {
+                                                                translateY: -3,
+                                                            },
+                                                        ],
+                                                    }}
+                                                >
+                                                    <View
+                                                        style={{
+                                                            width: 6,
+                                                            height: 6,
+                                                            borderRadius: 3,
+                                                            backgroundColor:
+                                                                "cyan",
+                                                        }}
+                                                    />
+                                                </View>
+                                            );
+                                        }
+                                    )}
+                            </>
+                        )}
+
                         <View style={styles.floorControls}>
                             <Pressable
                                 disabled={floorIndex === 0}
                                 onPress={() =>
-                                    setFloorIndex((f) => Math.max(f - 1, 0))
+                                    setFloorIndex((f) =>
+                                        Math.max(f - 1, 0)
+                                    )
                                 }
                             >
-                                <Ionicons name="chevron-down" size={28} color={theme.arrow} />
+                                <Ionicons
+                                    name="chevron-down"
+                                    size={28}
+                                    color={theme.arrow}
+                                />
                             </Pressable>
 
                             <Text>Floor {floor.level}</Text>
 
                             <Pressable
                                 disabled={
-                                    floorIndex === building.floors.length - 1
+                                    floorIndex ===
+                                    building.floors.length - 1
                                 }
                                 onPress={() =>
                                     setFloorIndex((f) =>
-                                        Math.min(
-                                            f + 1,
-                                            building.floors.length - 1
-                                        )
+                                        Math.min(f + 1, building.floors.length - 1)
                                     )
                                 }
                             >
-                                <Ionicons name="chevron-up" size={28} color={theme.arrow} />
+                                <Ionicons
+                                    name="chevron-up"
+                                    size={28}
+                                    color={theme.arrow}
+                                />
                             </Pressable>
                         </View>
                     </View>

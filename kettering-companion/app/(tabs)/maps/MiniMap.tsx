@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { Image } from "expo-image";
-import { BUILDINGS } from "./buildings";
+import { BUILDINGS, ROOM_INDEX } from "./buildings";
 import { useContainedImageLayout } from "./useContainedImageLayout";
 
 type MiniMapProps = {
@@ -10,22 +10,15 @@ type MiniMapProps = {
 export function MiniMap({ room }: MiniMapProps) {
     if (!room) return null;
 
-    const prefix = room.match(/^[A-Za-z]+/)?.[0]?.toUpperCase();
-    if (!prefix) return null;
+    const normalized = room.toUpperCase().trim().replace(/\s+/g, "");
 
-    const building = BUILDINGS[prefix];
-    if (!building) return null;
+    const roomData = ROOM_INDEX[normalized];
+    if (!roomData) return null;
 
-    const floorNumber = parseInt(room.replace(/\D/g, "").charAt(0));
-    let floorIndex = building.floors.findIndex(
-        (f) => f.level === floorNumber
-    );
-    if (floorIndex === -1) floorIndex = 0;
+    const building = BUILDINGS[roomData.buildingKey];
+    const floor = building.floors[roomData.floorIndex];
 
-    const floor = building.floors[floorIndex];
     const layout = useContainedImageLayout();
-
-    const roomCoordinates = floor.rooms[room] ?? null;
 
     return (
         <View style={{ height: 250 }} onLayout={layout.onContainerLayout}>
@@ -36,18 +29,16 @@ export function MiniMap({ room }: MiniMapProps) {
                 onLoad={layout.onImageLoad}
             />
 
-            {roomCoordinates && (
+            {layout.displayWidth > 0 && (
                 <View
                     style={{
                         position: "absolute",
                         left:
                             layout.offsetX +
-                            roomCoordinates.x * layout.displayWidth -
-                            6,
+                            roomData.x * layout.displayWidth - 6,
                         top:
                             layout.offsetY +
-                            roomCoordinates.y * layout.displayHeight -
-                            6,
+                            roomData.y * layout.displayHeight - 6,
                         width: 12,
                         height: 12,
                         borderRadius: 6,

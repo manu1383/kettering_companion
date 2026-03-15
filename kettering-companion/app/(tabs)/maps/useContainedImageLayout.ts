@@ -21,10 +21,13 @@ export function useContainedImageLayout() {
     let offsetY = 0;
 
     if (width && height) {
-        if (width / height > aspectRatio) {
+        if (width / height > aspectRatio) 
+        {
             displayWidth = height * aspectRatio;
             offsetX = (width - displayWidth) / 2;
-        } else {
+        } 
+        else 
+        {
             displayHeight = width / aspectRatio;
             offsetY = (height - displayHeight) / 2;
         }
