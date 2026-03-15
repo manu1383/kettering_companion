@@ -1,6 +1,6 @@
 export interface MeetingTime {
     weekday: number;
-    frequency: "weekly" | "biweekly" | "monthly";
+    frequency: "weekly" | "biweekly" | "monthly" | "never";
     startDate: string;
     endDate: string;
     startTime: string;

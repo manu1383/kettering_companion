@@ -8,7 +8,12 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
     endTime: string;
   }[] = [];
 
-  schedule.forEach(rule => {
+  for (const rule of schedule) {
+
+    console.log("Generator received:", rule);
+
+    if (!rule.startDate || !rule.endDate) continue;
+    if (!rule.startTime || !rule.endTime) continue;
 
     const [sy, sm, sd] = rule.startDate.split("-").map(Number);
     const [ey, em, ed] = rule.endDate.split("-").map(Number);
@@ -19,12 +24,12 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
     let current = new Date(start);
     const weekday = Number(rule.weekday);
 
-    // Move to first correct weekday
     while (current.getDay() !== weekday) {
       current.setDate(current.getDate() + 1);
     }
 
     const increment =
+      rule.frequency === "never" ? 0 :
       rule.frequency === "weekly" ? 7 :
       rule.frequency === "biweekly" ? 14 :
       28;
@@ -38,11 +43,8 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
       });
 
       current.setDate(current.getDate() + increment);
-
     }
-
-  });
+  }
 
   return meetings;
-
 }
