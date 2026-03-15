@@ -7,8 +7,10 @@ import {
     doc,
     getDoc,
     getDocs,
+    query,
     setDoc,
-    updateDoc
+    updateDoc,
+    where
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Club } from "../types/subscription";
@@ -45,8 +47,19 @@ export class ClubService {
     };
 
     static async deleteClub(id: string) {
-        const ref = doc(db, "clubs", id);
-        await deleteDoc(ref);
+        const q = query(
+            collection(db, "meetings"),
+            where("clubId", "==", id)
+        );
+
+        const snapshot = await getDocs(q);
+
+        for (const meetingDoc of snapshot.docs) {
+            await deleteDoc(meetingDoc.ref);
+        }
+
+        // 2. delete the club
+        await deleteDoc(doc(db, "clubs", id));
     };
 
     static async addOfficer(clubId: string, uid: string) {
