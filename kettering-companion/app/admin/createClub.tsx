@@ -32,7 +32,6 @@ export default function CreateClubScreen() {
   const handleCreateClub = async () => {
 
     const time = values.schedule[0];
-    console.log("Creating club with time:", time);
 
     const parsedStart = parseTime(time.startTime);
     const parsedEnd = parseTime(time.endTime);
@@ -55,7 +54,6 @@ export default function CreateClubScreen() {
         }
       ]
     };
-    console.log("Creating club with schedule:", updatedClub.schedule);
 
     await ClubService.createClub(updatedClub);
     await ClubService.regenerateMeetings(updatedClub);

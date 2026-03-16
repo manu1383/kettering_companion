@@ -57,7 +57,6 @@ export default function EditClubScreen() {
         }
       ]
     };
-    console.log("Creating club with schedule:", updatedClub.schedule);
     await ClubService.updateClub(values.id, updatedClub);
     await ClubService.regenerateMeetings(updatedClub);
     console.log(values.officers);

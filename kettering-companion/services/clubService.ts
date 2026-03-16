@@ -78,7 +78,6 @@ export class ClubService {
 
     static async createMeetings(club: any, meetings: any[]) {
         for (const meeting of meetings) {
-            console.log("Creating meeting for club:", club.id, "on date:", meeting.date, "with time:", meeting.startTime, "-", meeting.endTime);
             const dateString =
                 meeting.date.getFullYear() +
                 "-" +
@@ -86,7 +85,6 @@ export class ClubService {
                 "-" +
                 String(meeting.date.getDate()).padStart(2, "0");
             const ref = doc(collection(db, "meetings"), `${club.id}-${dateString}`);
-            console.log("Start time:", meeting.startTime, "End time:", meeting.endTime);
             await setDoc(ref, {
                 clubId: club.id,
                 clubName: club.name,
@@ -99,7 +97,6 @@ export class ClubService {
     };
 
     static async regenerateMeetings(club: Club) {
-        console.log("REGENERATING MEETINGS FOR:", club.id);
         const meetings = generateMeetingDates(club.schedule ?? []);
         // Remove existing meetings for this club
         const snapshot = await getDocs(collection(db, "meetings"));

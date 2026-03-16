@@ -28,8 +28,16 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
       current.setDate(current.getDate() + 1);
     }
 
+    if (rule.frequency === "never") {
+      meetings.push({
+        date: new Date(current),
+        startTime: rule.startTime,
+        endTime: rule.endTime
+      });
+      continue;
+    }
+
     const increment =
-      rule.frequency === "never" ? 0 :
       rule.frequency === "weekly" ? 7 :
       rule.frequency === "biweekly" ? 14 :
       28;
