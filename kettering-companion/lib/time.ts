@@ -1,25 +1,3 @@
-export function to24Hour(time12h: string): string {
-  if (!time12h) return "";
-
-  const match = time12h.trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
-
-  if (!match) return "";
-
-  let hours = parseInt(match[1], 10);
-  const minutes = match[2];
-  const modifier = match[3].toUpperCase();
-
-  if (modifier === "PM" && hours !== 12) {
-    hours += 12;
-  }
-
-  if (modifier === "AM" && hours === 12) {
-    hours = 0;
-  }
-
-  return `${hours.toString().padStart(2, "0")}:${minutes}`;
-}
-
 export function to12Hour(time?: string) {
   if (!time) return "";
 
