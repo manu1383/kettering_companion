@@ -34,20 +34,32 @@ export default function DaySchedule() {
     let endDate: Date;
     let isAllDay = false;
 
+    // Google event
     if (event.start?.dateTime && event.end?.dateTime) {
       startDate = new Date(event.start.dateTime);
       endDate = new Date(event.end.dateTime);
-    } else if (event.start?.date && event.end?.date) {
+    }
+
+    // Google all-day event
+    else if (event.start?.date && event.end?.date) {
       startDate = new Date(event.start.date);
       endDate = new Date(event.end.date);
       isAllDay = true;
-    } else {
+    }
+
+    // Club meeting event
+    else if (event.date && event.startTime && event.endTime) {
+      startDate = new Date(`${event.date}T${event.startTime}`);
+      endDate = new Date(`${event.date}T${event.endTime}`);
+    }
+
+    else {
       return null;
     }
 
     return {
-      id: event.id,
-      title: event.summary || "Untitled Event",
+      id: event.id || `${event.clubId}-${event.date}`,
+      title: event.summary || `${event.clubName} Meeting`,
       startDate,
       endDate,
       allDay: isAllDay,

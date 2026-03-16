@@ -1,10 +1,11 @@
-﻿import { Feather } from '@expo/vector-icons';
+﻿import { formatFrequency, getPluralWeekday, to12Hour } from '@/lib/time';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
 import { ClubService } from '../../services/clubService';
-import { Club } from '../../types/club';
+import { Club } from '../../types/subscription';
 
 export default function ClubsScreen() {
     const [clubs, setClubs] = useState<Club[]>([]);
@@ -32,9 +33,8 @@ export default function ClubsScreen() {
 
     const renderClub = ({ item }: { item: Club }) => {
         const scheduleText =
-        item.schedule
-            ?.map((m) => `${m.day} ${m.time}`)
-            .join(" • ") ?? "";
+            item.schedule
+                ?.map((m) => `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
         
         const isOfficer =
             item.officers?.includes(user?.uid ?? "");
@@ -67,7 +67,7 @@ export default function ClubsScreen() {
                     style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
                     onPress={() =>
                         router.push({
-                            pathname: "/clubs/[id]/edit",
+                            pathname: "/clubs/[id]/editClub",
                             params: { id: item.id! },
                         })
                     }
@@ -174,11 +174,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#555",
         marginBottom: 10,
-    },
-    meeting: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#4BA3C7",
     },
     emptyText: {
         textAlign: "center",

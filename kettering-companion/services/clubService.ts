@@ -1,3 +1,4 @@
+import { generateMeetingDates } from "@/lib/generateEvents";
 import {
     arrayRemove,
     arrayUnion,
@@ -6,11 +7,14 @@ import {
     doc,
     getDoc,
     getDocs,
+    query,
     setDoc,
-    updateDoc
+    updateDoc,
+    where
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Club } from "../types/club";
+import { Club } from "../types/subscription";
+
 
 export class ClubService {
     static getAllClubs = async (): Promise<Club[]> => {
@@ -43,8 +47,19 @@ export class ClubService {
     };
 
     static async deleteClub(id: string) {
-        const ref = doc(db, "clubs", id);
-        await deleteDoc(ref);
+        const q = query(
+            collection(db, "meetings"),
+            where("id", "==", id)
+        );
+
+        const snapshot = await getDocs(q);
+
+        for (const meetingDoc of snapshot.docs) {
+            await deleteDoc(meetingDoc.ref);
+        }
+
+        // 2. delete the club
+        await deleteDoc(doc(db, "clubs", id));
     };
 
     static async addOfficer(clubId: string, uid: string) {
@@ -59,5 +74,38 @@ export class ClubService {
         await updateDoc(ref, {
             officers: arrayRemove(uid)
         });
+    };
+
+    static async createMeetings(club: any, meetings: any[]) {
+        for (const meeting of meetings) {
+            const dateString =
+                meeting.date.getFullYear() +
+                "-" +
+                String(meeting.date.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(meeting.date.getDate()).padStart(2, "0");
+            const ref = doc(collection(db, "meetings"), `${club.id}-${dateString}`);
+            await setDoc(ref, {
+                clubId: club.id,
+                clubName: club.name,
+                date: dateString,
+                startTime: meeting.startTime,
+                endTime: meeting.endTime,
+                location: club.location ?? ""
+            });
+        }
+    };
+
+    static async regenerateMeetings(club: Club) {
+        const meetings = generateMeetingDates(club.schedule ?? []);
+        // Remove existing meetings for this club
+        const snapshot = await getDocs(collection(db, "meetings"));
+        for (const meetingDoc of snapshot.docs) {
+            if (meetingDoc.data().clubId === club.id) {
+                await deleteDoc(meetingDoc.ref);
+            }
+        }
+        // Create new meetings
+        await ClubService.createMeetings(club, meetings);
     };
 }
