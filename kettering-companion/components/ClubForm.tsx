@@ -9,6 +9,7 @@ type Props = {
     submitLabel: string;
     timeError?: string | null;
     onDelete?: () => void;
+    isEvent?: boolean;
 };
 
 export default function ClubForm({
@@ -17,7 +18,8 @@ export default function ClubForm({
   onSubmit,
   submitLabel,
   timeError,
-  onDelete
+  onDelete,
+  isEvent
 }: Props) {
 
     const updateClub = (field: keyof Club, value: any) => {
@@ -83,13 +85,16 @@ export default function ClubForm({
             style={styles.input}
         />
 
-        <TextInput
+        {!isEvent &&
+            <TextInput
             placeholder="Officer Email (sets permissions)"
             placeholderTextColor='#888'
             value={values.officers?.[0] ?? ""}
             onChangeText={(t) => updateOfficer(t)}
             style={styles.input}
-        />
+            />
+        }
+        
 
         <Text style={styles.subHeader}>Meeting Schedule</Text>
 
@@ -110,19 +115,20 @@ export default function ClubForm({
             </Picker>
         </View>
 
-        <Text style={styles.label}>Repeat</Text>
-
-        <View style={styles.picker}>
-            <Picker
-            selectedValue={time.frequency}
-            onValueChange={(v) => updateSchedule("frequency", v)}
-            >
-            <Picker.Item label="Never" value="never"/>
-            <Picker.Item label="Weekly" value="weekly"/>
-            <Picker.Item label="Biweekly" value="biweekly"/>
-            <Picker.Item label="Monthly" value="monthly"/>
-            </Picker>
-        </View>
+        {!isEvent && (
+            <><Text style={styles.label}>Repeat</Text>
+            <View style={styles.picker}>
+                <Picker
+                    selectedValue={time.frequency}
+                    onValueChange={(v) => updateSchedule("frequency", v)}
+                >
+                    <Picker.Item label="Never" value="never" />
+                    <Picker.Item label="Weekly" value="weekly" />
+                    <Picker.Item label="Biweekly" value="biweekly" />
+                    <Picker.Item label="Monthly" value="monthly" />
+                </Picker>
+            </View></>
+        )}
 
         <TextInput
             placeholder="Start Date (2024-09-01)"
@@ -132,13 +138,15 @@ export default function ClubForm({
             style={styles.input}
         />
 
-        <TextInput
-            placeholder="End Date (2024-12-31)"
-            placeholderTextColor='#888'
-            value={time.endDate}
-            onChangeText={(t) => updateSchedule("endDate", t)}
-            style={styles.input}
-        />
+        {!isEvent && (
+            <TextInput
+                placeholder="End Date (2024-12-31)"
+                placeholderTextColor='#888'
+                value={time.endDate}
+                onChangeText={(t) => updateSchedule("endDate", t)}
+                style={styles.input}
+            />
+        )}
 
         <TextInput
             placeholder="Start Time (12:20 PM)"
@@ -162,9 +170,15 @@ export default function ClubForm({
             <Text style={styles.buttonText}>{submitLabel}</Text>
         </TouchableOpacity>
 
-        {onDelete && (
+        {onDelete && !isEvent && (
             <TouchableOpacity style={[styles.button, { backgroundColor: "red", marginTop: 10 }]} onPress={onDelete}>
                 <Text style={styles.buttonText}>Delete Club</Text>
+            </TouchableOpacity>
+        )}
+
+        {onDelete && isEvent && (
+            <TouchableOpacity style={[styles.button, { backgroundColor: "red", marginTop: 10 }]} onPress={onDelete}>
+                <Text style={styles.buttonText}>Delete Event</Text>
             </TouchableOpacity>
         )}
 

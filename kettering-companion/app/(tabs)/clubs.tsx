@@ -175,11 +175,6 @@ const styles = StyleSheet.create({
         color: "#555",
         marginBottom: 10,
     },
-    meeting: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#4BA3C7",
-    },
     emptyText: {
         textAlign: "center",
         marginTop: 40,

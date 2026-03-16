@@ -49,7 +49,7 @@ export class ClubService {
     static async deleteClub(id: string) {
         const q = query(
             collection(db, "meetings"),
-            where("clubId", "==", id)
+            where("id", "==", id)
         );
 
         const snapshot = await getDocs(q);
@@ -102,7 +102,7 @@ export class ClubService {
         const snapshot = await getDocs(collection(db, "meetings"));
         for (const meetingDoc of snapshot.docs) {
             if (meetingDoc.data().clubId === club.id) {
-            await deleteDoc(meetingDoc.ref);
+                await deleteDoc(meetingDoc.ref);
             }
         }
         // Create new meetings

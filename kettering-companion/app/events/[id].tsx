@@ -1,12 +1,18 @@
+import { AuthContext } from "@/context/AuthProvider";
+import { copyCalendar } from "@/lib/copyCalendar";
+import { getWeekdayName, to12Hour } from "@/lib/time";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { useContext, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
+import { db } from "../../lib/firebase";
 import { EventService } from "../../services/eventService";
 import { Event } from "../../types/subscription";
 
@@ -16,26 +22,38 @@ import { Event } from "../../types/subscription";
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
+  const { user } = useContext(AuthContext);
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
 
     const fetchEvent = async () => {
-
       const eventData = await EventService.getEvent(id as string);
-
       if (!eventData) return;
-
       setEvent(eventData);
       setLoading(false);
     };
-
     fetchEvent();
 
   }, [id]);
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user || !event) return;
+      if(!event?.id){
+        console.error("Event ID is undefined");
+        return;
+      }
+      const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
+      const subDoc = await getDoc(subRef);
+      setSubscribed(subDoc.exists());
+    };
+    checkSubscription();
+  }, [user, event]);
 
   if (loading) {
     return (
@@ -53,6 +71,54 @@ export default function EventDetailScreen() {
     );
   }
 
+  const handleSubscribe = async () => {
+    if (!event || !user) return;
+
+    if(!event?.id){
+      console.error("Event ID is undefined");
+      return;
+    }
+
+    const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
+
+    await setDoc(subRef, {
+      clubId: event.id,
+      clubName: event.name,
+      subscribedAt: new Date()
+    });
+
+    setSubscribed(true);
+    const month = 
+      new Date().getFullYear() +
+      "-" +
+      String(new Date().getMonth() + 1).padStart(2, "0");
+    
+    await copyCalendar(user.uid, month);
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!event || !user) return;
+    if(!event?.id){
+      console.error("Event ID is undefined");
+      return;
+    }
+    const uid = user.uid;
+    const eventId = event.id;
+
+    const subRef = doc(db, "users", uid, "subscriptions", eventId);
+  
+    await deleteDoc(subRef);
+
+    const month = 
+      new Date().getFullYear() +
+      "-" +
+      String(new Date().getMonth() + 1).padStart(2, "0");
+
+    await copyCalendar(uid, month);
+    
+    alert("Unsubscribed and meetings removed!");
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.name}>{event.name}</Text>
@@ -63,10 +129,10 @@ export default function EventDetailScreen() {
 
       {event.schedule && (
         <>
-          <Text style={styles.sectionTitle}>Meeting Times: </Text>
+          <Text style={styles.sectionTitle}>Event Time: </Text>
           {event.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
-              {m.day} • {m.time}
+              {getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
             </Text>
           ))}
         </>
@@ -85,6 +151,18 @@ export default function EventDetailScreen() {
           <Text style={styles.section}>{event.contactEmail}</Text>
         </>
       )}
+
+      <TouchableOpacity
+        style={[
+          styles.calendarButton,
+          subscribed && { backgroundColor: "#999" }
+        ]}
+        onPress={subscribed ? handleUnsubscribe : handleSubscribe}
+      >
+        <Text style={styles.calendarButtonText}>
+          {subscribed ? "Remove from Calendar" : "Add Meeting to Calendar"}
+        </Text>
+      </TouchableOpacity>
     
     </ScrollView>
   );
@@ -118,21 +196,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 22,
   },
-  meeting: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#4BA3C7",
-    marginBottom: 20,
-  },
   section: {
     fontSize: 15,
     color: "#555",
     marginBottom: 10,
-  },
-  link: {
-    fontSize: 15,
-    color: "#4BA3C7",
-    fontWeight: "600",
   },
   sectionTitle: {
     fontWeight: "700",
@@ -143,21 +210,16 @@ const styles = StyleSheet.create({
       fontWeight: "600",
       marginBottom: 4,
   },
-  officerCard: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 8,
+  calendarButton: {
+    backgroundColor: "#4BA3C7",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 30,
   },
-
-  officerName: {
-    fontSize: 16,
+  calendarButtonText: {
+    color: "#fff",
     fontWeight: "700",
-    color: "#1D3D47",
-  },
-
-  officerEmail: {
-    fontSize: 14,
-    color: "#4BA3C7",
-  },
+    fontSize: 16,
+  }
 });

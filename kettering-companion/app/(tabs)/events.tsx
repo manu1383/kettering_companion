@@ -1,4 +1,5 @@
-﻿import { Feather } from '@expo/vector-icons';
+﻿import { formatDate, getWeekdayName, to12Hour } from '@/lib/time';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -32,9 +33,9 @@ export default function EventsScreen() {
 
     const renderEvent = ({ item }: { item: Event }) => {
         const scheduleText =
-        item.schedule
-            ?.map((m) => `${m.day} ${m.time}`)
-            .join(" • ") ?? "";
+            item.schedule
+                ?.map((m) => `${getWeekdayName(m.weekday)}, ${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
+            
         
         const canManage = role === "admin";
         return (
@@ -92,7 +93,7 @@ export default function EventsScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}> Events</Text>
+            <Text style={styles.header}>Events</Text>
 
             <TextInput
                 placeholder="Search events..."
@@ -119,7 +120,6 @@ export default function EventsScreen() {
                 <Text style={styles.emptyText}>No events found.</Text>
                 }
             />
-            
         </View>
     );
 }
@@ -160,21 +160,10 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
-    clubName: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#1D3D47",
-        marginBottom: 6,
-    },
     description: {
         fontSize: 14,
         color: "#555",
         marginBottom: 10,
-    },
-    meeting: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#4BA3C7",
     },
     emptyText: {
         textAlign: "center",

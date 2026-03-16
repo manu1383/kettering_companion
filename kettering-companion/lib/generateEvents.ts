@@ -12,13 +12,26 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
 
     console.log("Generator received:", rule);
 
-    if (!rule.startDate || !rule.endDate) continue;
+    if (!rule.startDate) continue;
     if (!rule.startTime || !rule.endTime) continue;
 
     const [sy, sm, sd] = rule.startDate.split("-").map(Number);
-    const [ey, em, ed] = rule.endDate.split("-").map(Number);
-
     const start = new Date(sy, sm - 1, sd);
+
+    // SINGLE EVENT
+    if (rule.frequency === "never") {
+      meetings.push({
+        date: start,
+        startTime: rule.startTime,
+        endTime: rule.endTime
+      });
+      continue;
+    }
+
+    // CLUBS REQUIRE END DATE
+    if (!rule.endDate) continue;
+
+    const [ey, em, ed] = rule.endDate.split("-").map(Number);
     const end = new Date(ey, em - 1, ed);
 
     let current = new Date(start);
@@ -26,15 +39,6 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
 
     while (current.getDay() !== weekday) {
       current.setDate(current.getDate() + 1);
-    }
-
-    if (rule.frequency === "never") {
-      meetings.push({
-        date: new Date(current),
-        startTime: rule.startTime,
-        endTime: rule.endTime
-      });
-      continue;
     }
 
     const increment =

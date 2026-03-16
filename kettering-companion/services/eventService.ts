@@ -1,3 +1,4 @@
+import { generateMeetingDates } from "@/lib/generateEvents";
 import {
     arrayRemove,
     arrayUnion,
@@ -6,8 +7,10 @@ import {
     doc,
     getDoc,
     getDocs,
+    query,
     setDoc,
-    updateDoc
+    updateDoc,
+    where
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Event } from "../types/subscription";
@@ -43,8 +46,17 @@ export class EventService {
     };
 
     static async deleteEvent(id: string) {
-        const ref = doc(db, "events", id);
-        await deleteDoc(ref);
+        const q = query(
+            collection(db, "meetings"),
+            where("id", "==", id)
+        );
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(async (doc) => {
+            await deleteDoc(doc.ref);
+        });
+
+    
     };
     // User subscribes to club event
     static async addAttendee(eventId: string, uid: string) {
@@ -61,7 +73,7 @@ export class EventService {
         });
     };
 
-    static async createMeetings(club: any, meetings: any[]) {
+    static async createMeetings(event: any, meetings: any[]) {
         for (const meeting of meetings) {
             const dateString =
                 meeting.date.getFullYear() +
@@ -69,15 +81,28 @@ export class EventService {
                 String(meeting.date.getMonth() + 1).padStart(2, "0") +
                 "-" +
                 String(meeting.date.getDate()).padStart(2, "0");
-            const ref = doc(collection(db, "meetings"), `${club.id}-${dateString}`);
+            const ref = doc(collection(db, "meetings"), `${event.id}-${dateString}`);
             await setDoc(ref, {
-                clubId: club.id,
-                clubName: club.name,
+                clubId: event.id,
+                clubName: event.name,
                 date: dateString,
                 startTime: meeting.startTime,
                 endTime: meeting.endTime,
-                location: club.location ?? ""
+                location: event.location ?? ""
             });
         }
-    }
+    };
+
+    static async regenerateMeetings(event: Event) {
+        const meetings = generateMeetingDates(event.schedule ?? []);
+        // Remove existing meetings for this club
+        const snapshot = await getDocs(collection(db, "meetings"));
+        for (const meetingDoc of snapshot.docs) {
+            if (meetingDoc.data().clubId === event.id) {
+                await deleteDoc(meetingDoc.ref);
+            }
+        }
+        // Create new meetings
+        await EventService.createMeetings(event, meetings);
+    };
 }

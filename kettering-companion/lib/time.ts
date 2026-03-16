@@ -89,3 +89,14 @@ export function getPluralWeekday(weekday: number) {
 
   return days[weekday] ?? "";
 };
+
+export function formatDate(dateString: string) {
+  const [y, m, d] = dateString.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+};
