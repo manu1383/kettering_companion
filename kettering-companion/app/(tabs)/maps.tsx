@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { BUILDINGS, ROOM_INDEX, validateRoom } from "./maps/buildings";
 import { useContainedImageLayout } from "./maps/useContainedImageLayout";
+import ZoomableImage from "./maps/ZoomableImage";
+
 type Layout = ReturnType<typeof useContainedImageLayout>;
 
 export default function MapScreen() {
@@ -41,20 +43,16 @@ export default function MapScreen() {
 
     const DEBUG_ROOMS = true;
 
-    const roomKey =  room ? room.toUpperCase().trim().replace(/\s+/g, "") : null;
+    const roomKey = room ? room.toUpperCase().trim().replace(/\s+/g, "") : null;
     const roomData = roomKey ? ROOM_INDEX[roomKey] : null;
     const match = room ? validateRoom(room) : null;
 
-    useEffect(() => 
-    {
+    useEffect(() => {
         if (!match) return;
 
         setSelectedBuilding(match.buildingKey);
         setFloorIndex(match.floorIndex);
-    }, 
-        [match]);
-
-    
+    }, [match]);
 
     function pixelRoomToScreen(
         layout: Layout,
@@ -65,20 +63,17 @@ export default function MapScreen() {
         },
         x: number,
         y: number
-    ) 
-    {
+    ) {
         const normalizedX = x / floor.imageWidth;
 
         // Flip Y axis, y=0 starts @ top of image
         const normalizedY = 1 - (y / floor.imageHeight);
 
         return {
-            left: layout.offsetX + normalizedX * layout.displayWidth,
-            top: layout.offsetY + normalizedY * layout.displayHeight
+            left: normalizedX * layout.displayWidth,
+            top: normalizedY * layout.displayHeight,
         };
     }
-
-    
 
     return (
         <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -89,11 +84,10 @@ export default function MapScreen() {
                     style={styles.mapContainer}
                     onLayout={campusLayout.onContainerLayout}
                 >
-                    <Image
+                    {/* Campus Map with oom handled inside component) */}
+                    <ZoomableImage
                         source={generalKUMap}
-                        style={campusLayout.imageStyle}
-                        contentFit="contain"
-                        onLoad={campusLayout.onImageLoad}
+                        layout={campusLayout}
                     />
 
                     {Object.entries(BUILDINGS).map(([key, b]) => (
@@ -103,12 +97,10 @@ export default function MapScreen() {
                                 position: "absolute",
                                 left:
                                     campusLayout.offsetX +
-                                    b.campusLocation.x *
-                                    campusLayout.displayWidth,
+                                    b.campusLocation.x * campusLayout.displayWidth,
                                 top:
                                     campusLayout.offsetY +
-                                    b.campusLocation.y *
-                                    campusLayout.displayHeight,
+                                    b.campusLocation.y * campusLayout.displayHeight,
                             }}
                             onPress={() => {
                                 setSelectedBuilding(key);
@@ -136,129 +128,100 @@ export default function MapScreen() {
                         style={{ flex: 1 }}
                         onLayout={floorLayout.onContainerLayout}
                     >
-                        <Image
+                        {/* Map and Markers */}
+                        <ZoomableImage
                             source={floor.image}
-                            style={floorLayout.imageStyle}
-                            contentFit="contain"
-                            onLoad={floorLayout.onImageLoad}
-                        />
+                            layout={floorLayout}
+                        >
+                            {/* Red Star Room Marker */}
+                            {roomData &&
+                                match &&
+                                selectedBuilding === match.buildingKey &&
+                                floorIndex === match.floorIndex &&
+                                (() => {
 
-                        {floorLayout.displayWidth > 0 && (
-                            <>
-                                {/* Room Marker */}
-                                {roomData &&
-                                    match &&
-                                    selectedBuilding === match.buildingKey &&
-                                    floorIndex === match.floorIndex && (() => {
+                                    const pos = pixelRoomToScreen(
+                                        floorLayout,
+                                        floor,
+                                        roomData.x,
+                                        roomData.y
+                                    );
 
-                                        const pos = pixelRoomToScreen(
-                                            floorLayout,
-                                            floor,
-                                            roomData.x,
-                                            roomData.y
-                                        );
+                                    return (
+                                        <View
+                                            style={{
+                                                position: "absolute",
+                                                ...pos,
+                                                transform: [
+                                                    { translateX: -16 },
+                                                    { translateY: -16 },
+                                                ],
+                                            }}
+                                        >
+                                            <Ionicons name="star" size={32} color="red" />
+                                        </View>
+                                    );
+                                })()}
 
-                                        return (
+                            {/* Debug room dots- useful for any map changes */}
+                            {DEBUG_ROOMS &&
+                                Object.entries(ROOM_INDEX).map(([key, r]) => {
+                                    if (r.floorIndex !== floorIndex) return null;
+                                    if (r.buildingKey !== selectedBuilding) return null;
+
+                                    const pos = pixelRoomToScreen(
+                                        floorLayout,
+                                        floor,
+                                        r.x,
+                                        r.y
+                                    );
+
+                                    return (
+                                        <View
+                                            key={key}
+                                            style={{
+                                                position: "absolute",
+                                                ...pos,
+                                                transform: [
+                                                    { translateX: -3 },
+                                                    { translateY: -3 },
+                                                ],
+                                            }}
+                                        >
                                             <View
                                                 style={{
-                                                    position: "absolute",
-                                                    ...pos,
-                                                    transform: [
-                                                        { translateX: -16 },
-                                                        { translateY: -16 },
-                                                    ],
+                                                    width: 6,
+                                                    height: 6,
+                                                    borderRadius: 3,
+                                                    backgroundColor: "cyan",
                                                 }}
-                                            >
-                                                <Ionicons
-                                                    name="star"
-                                                    size={32}
-                                                    color="red"
-                                                />
-                                            </View>
-                                        );
-                                    })()}
-
-                                {/* DEBUG ROOM DOTS */}
-                                {DEBUG_ROOMS &&
-                                    Object.entries(ROOM_INDEX).map(([key, r]) => {
-                                        if (r.floorIndex !== floorIndex) return null;
-                                        if (r.buildingKey !== selectedBuilding) return null;
-
-                                            const pos =
-                                                pixelRoomToScreen(
-                                                    floorLayout,
-                                                    floor,
-                                                    r.x,
-                                                    r.y
-                                                );
-
-                                            return (
-                                                <View
-                                                    key={key}
-                                                    style={{
-                                                        position:
-                                                            "absolute",
-                                                        ...pos,
-                                                        transform: [
-                                                            {
-                                                                translateX: -3,
-                                                            },
-                                                            {
-                                                                translateY: -3,
-                                                            },
-                                                        ],
-                                                    }}
-                                                >
-                                                    <View
-                                                        style={{
-                                                            width: 6,
-                                                            height: 6,
-                                                            borderRadius: 3,
-                                                            backgroundColor:
-                                                                "cyan",
-                                                        }}
-                                                    />
-                                                </View>
-                                            );
-                                        }
-                                    )}
-                            </>
-                        )}
+                                            />
+                                        </View>
+                                    );
+                                })}
+                        </ZoomableImage>
 
                         <View style={styles.floorControls}>
                             <Pressable
                                 disabled={floorIndex === 0}
                                 onPress={() =>
-                                    setFloorIndex((f) =>
-                                        Math.max(f - 1, 0)
-                                    )
+                                    setFloorIndex((f) => Math.max(f - 1, 0))
                                 }
                             >
-                                <Ionicons
-                                    name="chevron-down"
-                                    size={28}
-                                    color={theme.arrow}
-                                />
+                                <Ionicons name="chevron-down" size={28} color={theme.arrow} />
                             </Pressable>
 
                             <Text>Floor {floor.level}</Text>
 
                             <Pressable
-                                disabled={
-                                    floorIndex ===
-                                    building.floors.length - 1
-                                }
+                                disabled={floorIndex === building.floors.length - 1}
                                 onPress={() =>
                                     setFloorIndex((f) =>
                                         Math.min(f + 1, building.floors.length - 1)
                                     )
                                 }
                             >
-                                <Ionicons
-                                    name="chevron-up"
-                                    size={28}
-                                    color={theme.arrow}
-                                />
+                                <Ionicons name="chevron-up" size={28} color={theme.arrow} />
                             </Pressable>
                         </View>
                     </View>
