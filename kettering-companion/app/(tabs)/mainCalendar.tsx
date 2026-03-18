@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { MiniMap } from "./maps/MiniMap";
 
+
 WebBrowser.maybeCompleteAuthSession();
 
 const router = useRouter();
@@ -38,6 +39,7 @@ export default function DaySchedule() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { user } = useContext(AuthContext);
+  const [viewMode, setViewMode] = useState<"day" | "month">("day");
 
   const colorScheme = useColorScheme();
   const isLight = colorScheme === "light";
@@ -125,17 +127,29 @@ export default function DaySchedule() {
     return hours * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT;
   };
 
-  const goToPreviousDay = () => {
-    const prevDate = new Date(selectedDate);
-    prevDate.setDate(prevDate.getDate() - 1);
-    setSelectedDate(prevDate);
-  };
+  const goToPrevious = () => {
+        const newDate = new Date(selectedDate);
 
-  const goToNextDay = () => {
-    const nextDate = new Date(selectedDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    setSelectedDate(nextDate);
-  };
+        if (viewMode === "month") {
+            newDate.setMonth(newDate.getMonth() - 1);
+        } else {
+            newDate.setDate(newDate.getDate() - 1);
+        }
+
+        setSelectedDate(newDate);
+    };
+
+    const goToNext = () => {
+        const newDate = new Date(selectedDate);
+
+        if (viewMode === "month") {
+            newDate.setMonth(newDate.getMonth() + 1);
+        } else {
+            newDate.setDate(newDate.getDate() + 1);
+        }
+
+        setSelectedDate(newDate);
+    };
 
   const eventsForDay = events.filter(event => {
     const start = new Date(event.startDate);
@@ -272,11 +286,19 @@ export default function DaySchedule() {
   }, [timedEvents]);
 
   const formattedDate = selectedDate.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
   });
+
+  const headerText =
+        viewMode === "month"
+            ? selectedDate.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+            })
+            : formattedDate;
 
   //Color mapping for each type w/ default
   const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
@@ -317,14 +339,155 @@ export default function DaySchedule() {
     handleImport();
   }, [selectedDate, user]);
 
+  const getDaysInMonth = (date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const days = new Date(year, month + 1, 0).getDate();
+
+        const grid: (number | null)[] = [];
+
+        for (let i = 0; i < firstDay; i++) grid.push(null);
+        for (let i = 1; i <= days; i++) grid.push(i);
+
+        return grid;
+    };
+
+    const monthDays = getDaysInMonth(selectedDate);
+
+    const renderMonthView = () => {
+        const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        return (
+            <View style={{ padding: 10, alignItems: "center" }}>
+
+                {/* Weekday headers */}
+                <View style={{ flexDirection: "row", marginBottom: 5 }}>
+                    {WEEK_DAYS.map(day => (
+                        <Text
+                            key={day}
+                            style={{
+                                width: "14.2%",
+                                textAlign: "center",
+                                fontWeight: "600",
+                                color: "#888",
+                            }}
+                        >
+                            {day}
+                        </Text>
+                    ))}
+                </View>
+
+                <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                    {monthDays.map((day, index) => {
+                        if (!day) {
+                            return (
+                                <View
+                                    key={index}
+                                    style={{
+                                        width: "14.2%",
+                                        height: 45,
+                                    }}
+                                />
+                            );
+                        }
+
+                        const date = new Date(
+                            selectedDate.getFullYear(),
+                            selectedDate.getMonth(),
+                            day
+                        );
+
+                        // highlight today
+                        const today = new Date();
+                        const isToday =
+                            day === today.getDate() &&
+                            selectedDate.getMonth() === today.getMonth() &&
+                            selectedDate.getFullYear() === today.getFullYear();
+
+                        // FIXED: supports multi-day events
+                        const hasEvents = events.some(e => {
+                            const start = new Date(e.startDate);
+                            const end = new Date(e.endDate);
+
+                            const cellDate = new Date(
+                                selectedDate.getFullYear(),
+                                selectedDate.getMonth(),
+                                day
+                            );
+
+                            return start <= cellDate && end >= cellDate;
+                        });
+
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={{
+                                    width: "14.2%",
+                                    height: 45,
+                                    padding: 4,
+                                    borderWidth: 0.5,
+                                    borderColor: "#222",
+                                }}
+                                onPress={() => {
+                                    setSelectedDate(date);
+                                    setViewMode("day"); // 🔥 jump to day view
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        textAlign: "center",
+                                        color: isToday ? "#007AFF" : textColor,
+                                        fontWeight: isToday ? "bold" : "normal",
+                                    }}
+                                >
+                                    {day}
+                                </Text>
+
+                                {hasEvents && (
+                                    <View
+                                        style={{
+                                            marginTop: 4,
+                                            height: 8,
+                                            width: 8,
+                                            borderRadius: 4,
+                                            backgroundColor: "#007AFF",
+                                            alignSelf: "center",
+                                        }}
+                                    />
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
+        );
+    };
+
   return (
     <View style={[styles.container, { backgroundColor: isLight ? '#FFFFFF' : '#121212' }]}>
        <View style={styles.headerRow}>
-         <TouchableOpacity onPress={goToPreviousDay}>
+         <TouchableOpacity onPress={goToPrevious}>
                 <Text style={[styles.arrow, { color: isLight ? '#000' : '#FFF' }]}>◀</Text>
          </TouchableOpacity>
+         <View style={{ flexDirection: "row", gap: 8 }}>
+               <TouchableOpacity onPress={() => setViewMode("day")}>
+                   <Text style={{ color: viewMode === "day" ? "#007AFF" : "#888" }}>
+                       Day
+                   </Text>
+               </TouchableOpacity>
+
+               <TouchableOpacity onPress={() => setViewMode("month")}>
+                   <Text style={{ color: viewMode === "month" ? "#007AFF" : "#888" }}>
+                       Month
+                   </Text>
+               </TouchableOpacity>
+           </View>
       
-         <Text style={[styles.dateHeader, { color: isLight ? '#000' : '#FFF' }]}>{formattedDate}</Text>
+         <Text style={[styles.dateHeader, { color: isLight ? '#000' : '#FFF' }]}>
+               {headerText}
+           </Text>
 
          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {/* Help button with (i) icon */}
@@ -332,7 +495,7 @@ export default function DaySchedule() {
                 <Text style={{ fontSize: 22, color: isLight ? '#007AFF' : '#0A84FF' }}>ⓘ</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={goToNextDay}>
+            <TouchableOpacity onPress={goToNext}>
                 <Text style={[styles.arrow, { color: isLight ? '#000' : '#FFF' }]}>▶</Text>
             </TouchableOpacity>
          </View>
@@ -355,122 +518,127 @@ export default function DaySchedule() {
 
       
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-            paddingBottom: 50,
-            minHeight: HOUR_HEIGHT * 24,
-        }}
-        >
-        {/* All day events */}
-        {allDayEvents.length > 0 && (
-            <View style={styles.allDayContainer}>
-                {allDayEvents.map(event => (
-                    <View key={event.id} style={styles.allDayEvent}>
-                        <Text style={styles.allDayText}>{event.title}</Text>
+      {viewMode === "month" ? (
+            renderMonthView()
+        ) : (  
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingBottom: 50,
+                    minHeight: HOUR_HEIGHT * 24,
+                }}
+            >
+                {/* All day events */}
+                {allDayEvents.length > 0 && (
+                    <View style={styles.allDayContainer}>
+                        {allDayEvents.map(event => (
+                            <View key={event.id} style={styles.allDayEvent}>
+                                <Text style={styles.allDayText}>{event.title}</Text>
+                            </View>
+                        ))}
                     </View>
-                ))}
-            </View>
+                )}
+
+                {/* Main grid structure */}
+                <View style={{ flexDirection: "row" }}>
+
+                    {/* seperated hour labels */}
+                    <View style={{ width: 60 }}>
+                        {HOURS.map(hour => (
+                            <View
+                                key={hour}
+                                style={{ height: HOUR_HEIGHT }}
+                            >
+                                <Text style={styles.hourLabel}>
+                                    {hour === 12
+                                        ? "12 PM"
+                                        : hour > 12
+                                            ? `${hour - 12} PM`
+                                            : hour === 0
+                                                ? "12 AM"
+                                                : `${hour} AM`}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* right side for events */}
+                    <View style={{ flex: 1, position: "relative" }}>
+
+                        {/* Hour lines */}
+                        {HOURS.map(hour => (
+                            <View
+                                key={`line-${hour}`}
+                                style={{
+                                    position: "absolute",
+                                    top: hour * HOUR_HEIGHT,
+                                    left: 0,
+                                    right: 0,
+                                    height: 1,
+                                    backgroundColor: "#ddd",
+                                }}
+                            />
+                        ))}
+
+                        {/* Events */}
+                        {[...processedEvents]
+                            .sort(
+                                (a, b) =>
+                                    new Date(a.startDate).getTime() -
+                                    new Date(b.startDate).getTime()
+                            )
+                            .map(event => {
+                                const theme =
+                                    EVENT_COLORS[event.type] || EVENT_COLORS.Default;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={event.id}
+                                        activeOpacity={0.8}
+                                        onPress={() => setSelectedEvent(event)}
+                                        style={[
+                                            styles.eventBox,
+                                            {
+                                                position: "absolute",
+                                                top: event.top,
+                                                height: event.height,
+                                                left: `${event.left}%`,
+                                                width: `${event.width}%`,
+                                                backgroundColor: theme.bg,
+                                                borderLeftColor: theme.border,
+                                                zIndex: new Date(event.startDate).getTime(),
+                                                elevation: 1,
+                                            },
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[styles.eventTitle, { color: theme.text }]}
+                                            numberOfLines={1}
+                                        >
+                                            {event.title}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+
+                        {/* Current time display */}
+                        {isToday && (
+                            <View
+                                style={{
+                                    position: "absolute",
+                                    top: getTimePosition(new Date()),
+                                    left: 0,
+                                    right: 0,
+                                    height: 2,
+                                    backgroundColor: "red",
+                                }}
+                            />
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
         )}
 
-        {/* Main grid structure */}
-        <View style={{ flexDirection: "row" }}>
-
-            {/* seperated hour labels */}
-            <View style={{ width: 60 }}>
-                {HOURS.map(hour => (
-                    <View
-                        key={hour}
-                        style={{ height: HOUR_HEIGHT }}
-                    >
-                        <Text style={styles.hourLabel}>
-                            {hour === 12
-                                ? "12 PM"
-                                : hour > 12
-                                    ? `${hour - 12} PM`
-                                    : hour === 0
-                                        ? "12 AM"
-                                        : `${hour} AM`}
-                        </Text>
-                    </View>
-                ))}
-            </View>
-
-            {/* right side for events */}
-            <View style={{ flex: 1, position: "relative" }}>
-
-                {/* Hour lines */}
-                {HOURS.map(hour => (
-                    <View
-                        key={`line-${hour}`}
-                        style={{
-                            position: "absolute",
-                            top: hour * HOUR_HEIGHT,
-                            left: 0,
-                            right: 0,
-                            height: 1,
-                            backgroundColor: "#ddd",
-                        }}
-                    />
-                ))}
-
-                {/* Events */}
-                {[...processedEvents]
-                    .sort(
-                        (a, b) =>
-                            new Date(a.startDate).getTime() -
-                            new Date(b.startDate).getTime()
-                    )
-                    .map(event => {
-                        const theme =
-                            EVENT_COLORS[event.type] || EVENT_COLORS.Default;
-
-                        return (
-                            <TouchableOpacity
-                                key={event.id}
-                                activeOpacity={0.8}
-                                onPress={() => setSelectedEvent(event)}
-                                style={[
-                                    styles.eventBox,
-                                    {
-                                        position: "absolute",
-                                        top: event.top,
-                                        height: event.height,
-                                        left: `${event.left}%`,
-                                        width: `${event.width}%`,
-                                        backgroundColor: theme.bg,
-                                        borderLeftColor: theme.border,
-                                        zIndex: new Date(event.startDate).getTime(),
-                    elevation: 1,
-                                    },
-                                ]}
-                            >
-                                <Text
-                                    style={[styles.eventTitle, { color: theme.text }]}
-                                    numberOfLines={1}
-                                >
-                                    {event.title}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-
-                {/* Current time display */}
-                {isToday && (
-                    <View
-                        style={{
-                            position: "absolute",
-                            top: getTimePosition(new Date()),
-                            left: 0,
-                            right: 0,
-                            height: 2,
-                            backgroundColor: "red",
-                        }}
-                    />
-                )}
-            </View>
-        </View>
-        </ScrollView>
       <Modal
         visible={infoVisible}
         transparent
