@@ -38,28 +38,34 @@ class CalendarService {
     return email;
   }
 
-  async getCachedCalendar(userId: string, month: string) {
+  async getUserSubscriptions(userId: string) {
+    const snapshot = await db
+      .collection("users")
+      .doc(userId)
+      .collection("subscriptions")
+      .get();
+    const clubIds: string[] = [];
+    snapshot.forEach(doc => {
+      clubIds.push(doc.id);
+    });
+    return clubIds;
+  }
 
+  async getCachedCalendar(userId: string, month: string, force = false) {
+    if (force) return null;
     const cacheRef = db
       .collection("users")
       .doc(userId)
       .collection("calendarCache")
       .doc(month);
-
     const cacheDoc = await cacheRef.get();
-
     if (!cacheDoc.exists) return null;
-
     const lastUpdated = cacheDoc.data()?.lastUpdated?.toMillis?.();
-
     if (!lastUpdated) return null;
-
     const now = Date.now();
-
     if (now - lastUpdated < 10 * 60 * 1000) {
       return cacheDoc.data();
     }
-
     return null;
   }
 
@@ -94,6 +100,34 @@ class CalendarService {
     });
   }
 
+  async fetchMeetings(userId: string, month: string) {
+    const start = new Date(`${month}-01`);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    const subscriptions = await this.getUserSubscriptions(userId);
+    if (subscriptions.length === 0) return [];
+    const snapshot = await db.collection("meetings").get();
+    const meetings: any[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!subscriptions.includes(data.clubId)) return;
+      if (!data.date) return;
+      const meetingDate = new Date(data.date);
+      if (meetingDate >= start && meetingDate < end) {
+        meetings.push({
+          id: doc.id,
+          summary: `${data.clubName} Meeting`,
+          start: {
+            dateTime: `${data.date}T${data.startTime}:00`,
+          },
+          end: {
+            dateTime: `${data.date}T${data.endTime}:00`,
+          },
+        });
+      }
+    });
+    return meetings;
+  }
 }
 
 const calendarService = new CalendarService();
@@ -114,7 +148,9 @@ export const refreshCalendar = onRequest((req, res) => {
 
     try {
 
-      const cached = await calendarService.getCachedCalendar(userId, month);
+      const force = req.query.force === "true";
+
+      const cached = await calendarService.getCachedCalendar(userId, month, force);
 
       if (cached) {
         res.json(cached);
@@ -123,11 +159,17 @@ export const refreshCalendar = onRequest((req, res) => {
 
       const email = await calendarService.getUserEmail(userId);
 
-      const events = await calendarService.fetchCalendarEvents(email, month);
+      const googleEvents =
+        await calendarService.fetchCalendarEvents(email, month) || [];
+
+      const meetings =
+        await calendarService.fetchMeetings(userId, month);
+
+      const events = [...googleEvents, ...meetings];
 
       await calendarService.cacheCalendar(userId, month, events);
 
-      res.json(events);
+      res.json({ events });
 
     } catch (error) {
       console.error("Calendar fetch failed:", error);

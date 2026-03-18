@@ -1,4 +1,5 @@
-import { db } from "@/lib/firebase";
+import { AuthContext } from "@/context/AuthProvider";
+import { copyCalendar } from "@/lib/copyCalendar";
 import { getWeekdayName, to12Hour } from "@/lib/time";
 import { useLocalSearchParams } from "expo-router";
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
@@ -9,54 +10,50 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { AuthContext } from "../../context/AuthProvider";
-import { copyCalendar } from "../../lib/copyCalendar";
-import { ClubService } from "../../services/clubService";
-import { UserService } from "../../services/userService";
-import { Club, Officer } from "../../types/subscription";
+import { db } from "../../lib/firebase";
+import { EventService } from "../../services/eventService";
+import { Event } from "../../types/subscription";
 
 /* =============================
    Component
 ============================= */
 
-export default function ClubDetailScreen() {
+export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
 
-  const [club, setClub] = useState<Club | null>(null);
+  const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [officers, setOfficers] = useState<Officer[]>([]);
   const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
-    const fetchClub = async () => {
-      const clubData = await ClubService.getClub(id as string);
-      if (!clubData) return;
-      setClub(clubData);
-      const officerData = await UserService.getOfficersFromIds(clubData.officers ?? []);
-      setOfficers(officerData);
+
+    const fetchEvent = async () => {
+      const eventData = await EventService.getEvent(id as string);
+      if (!eventData) return;
+      setEvent(eventData);
       setLoading(false);
     };
-    fetchClub();
+    fetchEvent();
 
   }, [id]);
 
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!user || !club) return;
-      if(!club?.id){
-        console.error("Club ID is undefined");
+      if (!user || !event) return;
+      if(!event?.id){
+        console.error("Event ID is undefined");
         return;
       }
-      const subRef = doc(db, "users", user.uid, "subscriptions", club.id);
+      const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
       const subDoc = await getDoc(subRef);
       setSubscribed(subDoc.exists());
     };
     checkSubscription();
-  }, [user, club]);
+  }, [user, event]);
 
   if (loading) {
     return (
@@ -66,27 +63,27 @@ export default function ClubDetailScreen() {
     );
   }
 
-  if (error || !club) {
+  if (error || !event) {
     return (
       <View style={styles.centered}>
-        <Text style={{ color: "red" }}>{error ?? "Club not found."}</Text>
+        <Text style={{ color: "red" }}>{error ?? "Event not found."}</Text>
       </View>
     );
   }
 
   const handleSubscribe = async () => {
-    if (!club || !user) return;
+    if (!event || !user) return;
 
-    if(!club?.id){
-      console.error("Club ID is undefined");
+    if(!event?.id){
+      console.error("Event ID is undefined");
       return;
     }
 
-    const subRef = doc(db, "users", user.uid, "subscriptions", club.id);
+    const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
 
     await setDoc(subRef, {
-      clubId: club.id,
-      clubName: club.name,
+      clubId: event.id,
+      clubName: event.name,
       subscribedAt: new Date()
     });
 
@@ -100,15 +97,15 @@ export default function ClubDetailScreen() {
   };
 
   const handleUnsubscribe = async () => {
-    if (!club || !user) return;
-    if(!club?.id){
-      console.error("Club ID is undefined");
+    if (!event || !user) return;
+    if(!event?.id){
+      console.error("Event ID is undefined");
       return;
     }
     const uid = user.uid;
-    const clubId = club.id;
+    const eventId = event.id;
 
-    const subRef = doc(db, "users", uid, "subscriptions", clubId);
+    const subRef = doc(db, "users", uid, "subscriptions", eventId);
   
     await deleteDoc(subRef);
 
@@ -124,54 +121,34 @@ export default function ClubDetailScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.name}>{club.name}</Text>
+      <Text style={styles.name}>{event.name}</Text>
 
-      {club.description && (
-        <Text style={styles.description}>{club.description}</Text>
+      {event.description && (
+        <Text style={styles.description}>{event.description}</Text>
       )}
 
-      {club.schedule && (
+      {event.schedule && (
         <>
-          <Text style={styles.sectionTitle}>Meeting Times: </Text>
-          {club.schedule.map((m, i) => (
+          <Text style={styles.sectionTitle}>Event Time: </Text>
+          {event.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
-              {getWeekdayName(m.weekday)} • {m.frequency} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+              {getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
             </Text>
           ))}
         </>
       )}
 
-      {club.location && (
+      {event.location && (
         <>
           <Text style={styles.sectionTitle}>Location: </Text>
-          <Text>{club.location}</Text>
+          <Text>{event.location}</Text>
         </>
       )}
 
-      {club.contactEmail && (
+      {event.contactEmail && (
         <>
           <Text style={styles.sectionTitle}>Contact Email: </Text>
-          <Text style={styles.section}>{club.contactEmail}</Text>
-        </>
-      )}
-
-      {club.instagram && (
-        <>
-          <Text style={styles.sectionTitle}>Instagram: </Text>
-          <Text style={styles.link}>{club.instagram}</Text>
-        </>
-      )}
-
-      {officers.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>Officers:</Text>
-
-          {officers.map((officer, index) => (
-            <View key={index} style={styles.officerCard}>
-              <Text style={styles.officerName}>{officer.name}</Text>
-              <Text style={styles.officerEmail}>{officer.email}</Text>
-            </View>
-          ))}
+          <Text style={styles.section}>{event.contactEmail}</Text>
         </>
       )}
 
@@ -183,9 +160,10 @@ export default function ClubDetailScreen() {
         onPress={subscribed ? handleUnsubscribe : handleSubscribe}
       >
         <Text style={styles.calendarButtonText}>
-          {subscribed ? "Remove from Calendar" : "Add Meetings to Calendar"}
+          {subscribed ? "Remove from Calendar" : "Add Meeting to Calendar"}
         </Text>
       </TouchableOpacity>
+    
     </ScrollView>
   );
 }
@@ -218,21 +196,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 22,
   },
-  meeting: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#4BA3C7",
-    marginBottom: 20,
-  },
   section: {
     fontSize: 15,
     color: "#555",
     marginBottom: 10,
-  },
-  link: {
-    fontSize: 15,
-    color: "#4BA3C7",
-    fontWeight: "600",
   },
   sectionTitle: {
     fontWeight: "700",
@@ -242,23 +209,6 @@ const styles = StyleSheet.create({
       color: "#4BA3C7",
       fontWeight: "600",
       marginBottom: 4,
-  },
-  officerCard: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-
-  officerName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1D3D47",
-  },
-
-  officerEmail: {
-    fontSize: 14,
-    color: "#4BA3C7",
   },
   calendarButton: {
     backgroundColor: "#4BA3C7",
@@ -271,5 +221,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,
-  },
+  }
 });

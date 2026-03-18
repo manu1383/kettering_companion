@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Officer } from "../types/club";
+import { Officer } from "../types/subscription";
 
 export class UserService {
   static async findUserByEmail(email: string) {

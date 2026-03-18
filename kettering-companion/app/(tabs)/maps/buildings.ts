@@ -353,7 +353,6 @@ export const BUILDINGS: BuildingsType = {
 
     CC: {
         name: "Campus Center",
-        campusLocation: { x: 0.5106, y: 0.5742 },
         floors: [
             {
                 level: 1,
@@ -874,20 +873,20 @@ export type RoomIndexEntry = {
 
     export type RoomIndexType = Record<string, RoomIndexEntry>;
 
-    export const ROOM_INDEX: RoomIndexType = {};
+export const ROOM_INDEX: RoomIndexType = {};
 
-    Object.entries(BUILDINGS).forEach(([buildingKey, building]) => {
-        building.floors.forEach((floor, floorIndex) => {
+Object.entries(BUILDINGS).forEach(([buildingKey, building]) => {
+    building.floors.forEach((floor, floorIndex) => {
             Object.entries(floor.rooms).forEach(([roomKey, coords]) => {
-                ROOM_INDEX[roomKey.toUpperCase()] = {
-                    buildingKey,
-                    floorIndex,
+            ROOM_INDEX[roomKey.toUpperCase()] = {
+                buildingKey,
+                floorIndex,
                     x: coords.x,
                     y: coords.y,
-                };
-            });
+            };
         });
     });
+});
 
 export function extractBuildingPrefix(room: string): string | null {
     const match = room.toUpperCase().match(/^[A-Z]+/);
