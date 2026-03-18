@@ -432,7 +432,7 @@ export default function DaySchedule() {
                                 }}
                                 onPress={() => {
                                     setSelectedDate(date);
-                                    setViewMode("day"); // 🔥 jump to day view
+                                    setViewMode("day"); // jump to day view
                                 }}
                             >
                                 <Text
