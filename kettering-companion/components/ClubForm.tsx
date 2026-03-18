@@ -22,7 +22,7 @@ export default function ClubForm({
   isEvent
 }: Props) {
 
-    const updateClub = (field: keyof Club, value: any) => {
+    const update = (field: keyof Club, value: any) => {
         setValues(prev => ({
             ...prev,
             [field]: value
@@ -52,47 +52,52 @@ export default function ClubForm({
     return (
         <ScrollView style={styles.container}>
 
+        <Text style={styles.label}>Name</Text>
         <TextInput
-            placeholder="Club Name"
+            placeholder="Name"
             placeholderTextColor='#888'
             value={values.name}
-            onChangeText={(t) => updateClub("name", t)}
+            onChangeText={(t) => update("name", t)}
             style={styles.input}
         />
 
+        <Text style={styles.label}>Description</Text>
         <TextInput
             placeholder="Description"
             placeholderTextColor='#888'
             value={values.description}
-            onChangeText={(t) => updateClub("description", t)}
+            onChangeText={(t) => update("description", t)}
             style={styles.input}
             multiline
         />
 
+        <Text style={styles.label}>Location</Text>
         <TextInput
             placeholder="Location"
             placeholderTextColor='#888'
             value={values.location}
-            onChangeText={(t) => updateClub("location", t)}
+            onChangeText={(t) => update("location", t)}
             style={styles.input}
         />
 
+        <Text style={styles.label}>Contact Email</Text>
         <TextInput
             placeholder="Contact Email"
             placeholderTextColor='#888'
             value={values.contactEmail}
-            onChangeText={(t) => updateClub("contactEmail", t)}
+            onChangeText={(t) => update("contactEmail", t)}
             style={styles.input}
         />
 
         {!isEvent &&
+            <><Text style={styles.label}>Officer Email (sets permissions)</Text>
             <TextInput
             placeholder="Officer Email (sets permissions)"
             placeholderTextColor='#888'
             value={values.officers?.[0] ?? ""}
             onChangeText={(t) => updateOfficer(t)}
             style={styles.input}
-            />
+            /></>
         }
         
 
@@ -130,6 +135,7 @@ export default function ClubForm({
             </View></>
         )}
 
+        <Text style={styles.label}>Start Date (YYYY-MM-DD)</Text>
         <TextInput
             placeholder="Start Date (2024-09-01)"
             placeholderTextColor='#888'
@@ -139,15 +145,17 @@ export default function ClubForm({
         />
 
         {!isEvent && (
+            <><Text style={styles.label}>End Date (YYYY-MM-DD)</Text>
             <TextInput
                 placeholder="End Date (2024-12-31)"
                 placeholderTextColor='#888'
                 value={time.endDate}
                 onChangeText={(t) => updateSchedule("endDate", t)}
                 style={styles.input}
-            />
+            /></>
         )}
 
+        <Text style={styles.label}>Start Time (HH:MM AM/PM)</Text>
         <TextInput
             placeholder="Start Time (12:20 PM)"
             placeholderTextColor='#888'
@@ -156,6 +164,7 @@ export default function ClubForm({
             style={styles.input}
         />
 
+        <Text style={styles.label}>End Time (HH:MM AM/PM)</Text>
         <TextInput
             placeholder="End Time (1:20 PM)"
             placeholderTextColor='#888'

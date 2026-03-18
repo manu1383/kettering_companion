@@ -132,7 +132,7 @@ export default function EventDetailScreen() {
           <Text style={styles.sectionTitle}>Event Time: </Text>
           {event.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
-              {getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+              {m.weekday !== undefined && getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
             </Text>
           ))}
         </>

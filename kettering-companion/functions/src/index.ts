@@ -1,12 +1,9 @@
-import cors from "cors";
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
 import { google } from "googleapis";
 
 admin.initializeApp();
 const db = admin.firestore();
-
-const corsHandler = cors({ origin: true });
 
 class CalendarService {
 
@@ -130,10 +127,18 @@ class CalendarService {
   }
 }
 
-const calendarService = new CalendarService();
+export const refreshCalendar = onRequest(
+  { region: "us-central1" },
+  async (req, res) => {
 
-export const refreshCalendar = onRequest((req, res) => {
-  corsHandler(req, res, async () => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
 
     const userId =
       typeof req.query.userId === "string" ? req.query.userId : undefined;
@@ -147,8 +152,9 @@ export const refreshCalendar = onRequest((req, res) => {
     }
 
     try {
-
       const force = req.query.force === "true";
+
+      const calendarService = new CalendarService();
 
       const cached = await calendarService.getCachedCalendar(userId, month, force);
 
@@ -175,6 +181,5 @@ export const refreshCalendar = onRequest((req, res) => {
       console.error("Calendar fetch failed:", error);
       res.status(500).send("Calendar fetch failed");
     }
-
-  });
-});
+  }
+);
