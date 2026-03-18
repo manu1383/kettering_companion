@@ -44,6 +44,8 @@ export default function CreateIntramuralScreen() {
             ...values,
             id: gameId,
             name: values.name,
+            team1Id: values.sport.toLowerCase()+"_"+values.tourney.toLowerCase()+"_"+values.team1.toLowerCase(),
+            team2Id: values.sport.toLowerCase()+"_"+values.tourney.toLowerCase()+"_"+values.team2.toLowerCase(),
             schedule: [
             {
                 ...time,

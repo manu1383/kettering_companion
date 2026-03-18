@@ -135,6 +135,20 @@ export default function EventDetailScreen() {
         </>
       )}
 
+      {game.sport && (
+        <>
+          <Text style={styles.sectionTitle}>Sport: </Text>
+          <Text>{game.sport}</Text>
+        </>
+      )}
+
+      {game.tourney && (
+        <>
+          <Text style={styles.sectionTitle}>Tourney: </Text>
+          <Text>{game.tourney}</Text>
+        </>
+      )}
+
       {game.location && (
         <>
           <Text style={styles.sectionTitle}>Location: </Text>

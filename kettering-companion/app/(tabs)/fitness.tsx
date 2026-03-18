@@ -1,47 +1,90 @@
 ﻿import { formatDate, to12Hour } from '@/lib/time';
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useContext, useState } from 'react';
+import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
+import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
 import { IMService } from '../../services/imService';
 import { Intramural } from '../../types/subscription';
 
-export default function EventsScreen() {
+export default function FitnessScreen() {
+    const { role } = useContext(AuthContext);
+    const router = useRouter();
     const [games, setGames] = useState<Intramural[]>([]);
+    const [filteredGames, setFilteredGames] = useState<Intramural[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
-    const { role } = useContext(AuthContext);
 
-    useFocusEffect(
-        useCallback(() => {
-            const fetchEvents = async () => {
-                const data = await IMService.getAllGames();
-                data.sort((a, b) => {
-                    const aStart = a.schedule?.[0];
-                    const bStart = b.schedule?.[0];
+    const [filters, setFilters] = useState({
+        sport: "",
+        tourney: "",
+        team: "",
+        date: null,
+    });
 
-                    if (!aStart || !bStart) return 0;
+    useEffect(() => {
+        const fetchGames = async () => {
+            const data = await IMService.getAllGames();
+            data.sort((a, b) => {
+                const aStart = a.schedule?.[0];
+                const bStart = b.schedule?.[0];
 
-                    const aDateTime = new Date(`${aStart.startDate}T${aStart.startTime}`);
-                    const bDateTime = new Date(`${bStart.startDate}T${bStart.startTime}`);
+                if (!aStart || !bStart) return 0;
 
-                    return aDateTime.getTime() - bDateTime.getTime();
-                });
-                setGames(data);
-                setLoading(false);
-            };
-            fetchEvents();
-        }, [])
-    );
+                const aDateTime = new Date(`${aStart.startDate}T${aStart.startTime}`);
+                const bDateTime = new Date(`${bStart.startDate}T${bStart.startTime}`);
 
-    const filteredEvents = games.filter((game) =>
-        game.name.toLowerCase().includes(search.toLowerCase())
-    );
+                return aDateTime.getTime() - bDateTime.getTime();
+            });
+            setGames(data);
+            setFilteredGames(data);
+            setLoading(false);
+        };
+        fetchGames();
+    }, []);
 
-    const renderEvent = ({ item }: { item: Intramural }) => {
+    useEffect(() => {
+        const filtered = games.filter(game => {
+            const firstMatch = game.schedule?.[0];
+
+            const gameDate = firstMatch
+                ? new Date(`${firstMatch.startDate}T${firstMatch.startTime}`)
+                : null;
+
+            const matchesSport =
+                !filters.sport || game.sport === filters.sport;
+            
+            const matchesTourney =
+                !filters.tourney || game.tourney === filters.tourney;
+            
+            const matchesTeam =
+                !filters.team ||
+                game.team1 === filters.team ||
+                game.team2 === filters.team;
+
+            const matchesDate =
+                !filters.date ||
+                (gameDate &&
+                    gameDate.toDateString() === 
+                    new Date(filters.date).toDateString());
+            
+            return (
+                matchesSport &&
+                matchesTourney &&
+                matchesTeam &&
+                matchesDate
+            );
+        });
+        setFilteredGames(filtered);
+    }, [filters, games]);
+
+    const sports = [...new Set(games.map(g => g.sport))].filter(Boolean);
+    const tourneys = [...new Set(games.map(g => g.tourney))].filter(Boolean);
+    const teams = [...new Set(games.flatMap(g => [g.team1, g.team2]))].filter(Boolean);
+
+    const renderGame = ({ item }: { item: Intramural }) => {
         const scheduleText =
             item.schedule
                 ?.map((m) => `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
@@ -61,7 +104,7 @@ export default function EventsScreen() {
             <Text style={styles.name}>{item.name}</Text>
 
             <Text style={styles.schedule}>
-                {[scheduleText, item.location].filter(Boolean).join(" • ")}
+                {[scheduleText, item.tourney + '-Tourney ' + item.sport].filter(Boolean).join(" • ")}
             </Text>
             {canManage && 
                 <TouchableOpacity
@@ -98,6 +141,7 @@ export default function EventsScreen() {
 
     return (
         <View style={styles.container}>
+
             <Text style={styles.header}>Intramurals</Text>
 
             <TextInput
@@ -107,6 +151,49 @@ export default function EventsScreen() {
                 style={styles.search}
                 placeholderTextColor="#888"
             />
+            <View style={styles.pickerWrapper}>
+                <View style={styles.smallPicker}>
+                    <Picker
+                        selectedValue={filters.sport}
+                        onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, sport: value }))
+                        }
+                    >
+                        <Picker.Item label="All Sports" value="" />
+                        {sports.map((s) => (
+                        <Picker.Item key={s} label={s} value={s} />
+                        ))}
+                    </Picker>
+                </View>
+
+                <View style={styles.smallPicker}>
+                    <Picker
+                        selectedValue={filters.tourney}
+                        onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, tourney: value }))
+                        }
+                    >
+                        <Picker.Item label="All Tourneys" value="" />
+                        {tourneys.map((t) => (
+                        <Picker.Item key={t} label={t} value={t} />
+                        ))}
+                    </Picker>
+                </View>
+
+                <View style={styles.smallPicker}>
+                    <Picker
+                        selectedValue={filters.team}
+                        onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, team: value }))
+                        }
+                    >
+                        <Picker.Item label="All Teams" value="" />
+                        {teams.map((t) => (
+                        <Picker.Item key={t} label={t} value={t} />
+                        ))}
+                    </Picker>
+                </View>
+            </View>
 
             {role === "admin" && (
                 <TouchableOpacity
@@ -116,9 +203,10 @@ export default function EventsScreen() {
                     <Text style={styles.createButtonText}>+ Create Intramural</Text>
                 </TouchableOpacity>
             )}
+
             <FlatList
-                data={filteredEvents}
-                renderItem={renderEvent}
+                data={filteredGames}
+                renderItem={renderGame}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                 <Text style={styles.emptyText}>No intramurals found.</Text>
@@ -145,14 +233,14 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontWeight: "700",
         color: "#1D3D47",
-        marginBottom: 18,
+        marginBottom: 10,
     },
     search: {
         backgroundColor: "#fff",
         borderRadius: 14,
         padding: 14,
         fontSize: 16,
-        marginBottom: 20,
+        marginBottom: 10,
     },
     card: {
         backgroundColor: "#fff",
@@ -180,6 +268,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         marginBottom: 16,
+        marginTop: 16
     },
     createButtonText: {
         color: "#fff",
@@ -194,5 +283,14 @@ const styles = StyleSheet.create({
     schedule: {
         color: "#4BA3C7",
         fontWeight: "600",
-    }
+    },
+    pickerWrapper: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    smallPicker: {
+        width: "30%",
+        backgroundColor: "#eee",
+        borderRadius: 5,
+    },
 });
