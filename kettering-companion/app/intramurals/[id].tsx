@@ -55,14 +55,15 @@ export default function EventDetailScreen() {
       const team1Id = getTeamId(game.team1);
       const team2Id = getTeamId(game.team2);
 
-      const [doc1, doc2] = await Promise.all([
+      const [doc1, doc2, gameDoc] = await Promise.all([
         team1Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team1Id)) : null,
         team2Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team2Id)) : null,
+        getDoc(doc(db, "users", user.uid, "subscriptions", game.id))
       ]);
 
       setTeam1Sub(doc1?.exists() ?? false);
       setTeam2Sub(doc2?.exists() ?? false);
-      setSubscribed((doc1?.exists() ?? false) || (doc2?.exists() ?? false));
+      setSubscribed(gameDoc.exists());
     };
     checkSubscription();
   }, [user, game]);
@@ -154,7 +155,7 @@ export default function EventDetailScreen() {
     
   };
 
-  const unsubscribe = async (teamName: string) => {
+  const unsubscribeFromTeam = async (teamName: string) => {
       if (!user) return;
 
       const teamId = getTeamId(teamName);
@@ -163,6 +164,22 @@ export default function EventDetailScreen() {
       await deleteDoc(doc(db, "users", user.uid, "calendarCache", teamId));
 
       alert(`Unsubscribed from ${teamName}`);
+  };
+
+  const unsubscribeFromGame = async () => {
+    if (!user || !game) return;
+    const uid = user.uid;
+    const gameId = game.id;
+    const subRef = doc(db, "users", uid, "subscriptions", gameId);
+    
+    await deleteDoc(subRef);
+    const month =
+      new Date().getFullYear() +
+      "-" +
+      String(new Date().getMonth() + 1).padStart(2, "0");
+
+    await copyCalendar(uid, month);
+    alert("Unsubscribed from game and removed from calendar!");
   };
 
   return (
@@ -202,49 +219,39 @@ export default function EventDetailScreen() {
       )}
 
       <TouchableOpacity
-        style={styles.calendarButton}
-        onPress={addGameToCalendar}
+        style={[styles.calendarButton, subscribed && { backgroundColor: "#999" }]}
+        onPress={() => subscribed ? unsubscribeFromGame() : addGameToCalendar()}
       >
         <Text style={styles.calendarButtonText}>
-          Add This Game
+          {subscribed ? "Remove Game from Calendar" : "Add Game to Calendar"}
         </Text>
       </TouchableOpacity>
 
-      {/* 🔔 Subscribe Team 1 */}
       <TouchableOpacity
         style={[
           styles.calendarButton,
           team1Sub && { backgroundColor: "#999" },
         ]}
         onPress={() =>
-          team1Sub
-            ? unsubscribe(game.team1)
-            : subscribeToTeam(game.team1)
+          team1Sub ? unsubscribeFromTeam(game.team1) : subscribeToTeam(game.team1)
         }
       >
         <Text style={styles.calendarButtonText}>
-          {team1Sub
-            ? `Unfollow ${game.team1}`
-            : `Follow ${game.team1}`}
+          {team1Sub ? `Unfollow ${game.team1}` : `Follow ${game.team1}`}
         </Text>
       </TouchableOpacity>
 
-      {/* 🔔 Subscribe Team 2 */}
       <TouchableOpacity
         style={[
           styles.calendarButton,
           team2Sub && { backgroundColor: "#999" },
         ]}
         onPress={() =>
-          team2Sub
-            ? unsubscribe(game.team2)
-            : subscribeToTeam(game.team2)
+          team2Sub ? unsubscribeFromTeam(game.team2) : subscribeToTeam(game.team2)
         }
       >
         <Text style={styles.calendarButtonText}>
-          {team2Sub
-            ? `Unfollow ${game.team2}`
-            : `Follow ${game.team2}`}
+          {team2Sub ? `Unfollow ${game.team2}` : `Follow ${game.team2}`}
         </Text>
       </TouchableOpacity>
       

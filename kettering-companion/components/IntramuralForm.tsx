@@ -11,7 +11,7 @@ type Props = {
     onDelete?: () => void;
 };
 
-export default function IntramuralForm({ values, setValues, onSubmit, submitLabel }: Props) {
+export default function IntramuralForm({ values, setValues, onSubmit, submitLabel, timeError, onDelete }: Props) {
     const updateGame = (field: keyof Intramural, value: any) => {
         setValues(prev => ({
             ...prev,
@@ -91,9 +91,19 @@ export default function IntramuralForm({ values, setValues, onSubmit, submitLabe
                 onChangeText={(text) => updateGame("tourney", text)}
             />
 
+            {timeError && <Text style={{ color: "red", marginBottom: 10 }}>{timeError}</Text>}
+
             <TouchableOpacity style={styles.button} onPress={onSubmit}>
-                <Text style={{ color: "white" }}>Create Game</Text>
+                <Text style={{ color: "white" }}>{submitLabel}</Text>
             </TouchableOpacity>
+
+            {onDelete && (
+                <TouchableOpacity style={[styles.button, { backgroundColor: "red", marginTop: 10 }]} onPress={onDelete}>
+                    <Text style={{ color: "white" }}>Delete Game</Text>
+                </TouchableOpacity>
+            )}
+
+
         </ScrollView>
     );
 }
