@@ -14,7 +14,6 @@ export interface Officer {
 }
 
 export interface Club extends Event{
-    instagram?: string;
     officers?: string[];
 }
 

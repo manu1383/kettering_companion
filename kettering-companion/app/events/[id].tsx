@@ -94,6 +94,7 @@ export default function EventDetailScreen() {
       String(new Date().getMonth() + 1).padStart(2, "0");
     
     await copyCalendar(user.uid, month);
+    alert("Meeting added to calendar!");
   };
 
   const handleUnsubscribe = async () => {
@@ -116,7 +117,7 @@ export default function EventDetailScreen() {
 
     await copyCalendar(uid, month);
     
-    alert("Unsubscribed and meetings removed!");
+    alert("Meeting removed from calendar!");
   };
 
   return (

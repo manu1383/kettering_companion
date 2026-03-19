@@ -109,16 +109,16 @@ export class ClubService {
         await ClubService.createMeetings(club, meetings);
     };
 
-    static subscribeToClub = async (uid: string, clubId: string) => {
+    static subscribeToClub = async (uid: string, id: string) => {
         await setDoc(
-            doc(db, "users", uid, "subscriptions", clubId),
-            { clubId }
+            doc(db, "users", uid, "subscriptions", id),
+            { id }
         );
     };
 
-    static unsubscribeFromClub = async (uid: string, clubId: string) => {
+    static unsubscribeFromClub = async (uid: string, id: string) => {
         await deleteDoc(
-            doc(db, "users", uid, "subscriptions", clubId)
+            doc(db, "users", uid, "subscriptions", id)
         );
     };
 
