@@ -3,7 +3,7 @@ import { copyCalendar } from "@/lib/copyCalendar";
 import { formatDate, to12Hour } from "@/lib/time";
 import { IMService } from "@/services/imService";
 import { useLocalSearchParams } from "expo-router";
-import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, writeBatch } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -29,8 +29,10 @@ export default function EventDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
 
-  useEffect(() => {
+  const [team1Sub, setTeam1Sub] = useState(false);
+  const [team2Sub, setTeam2Sub] = useState(false);
 
+  useEffect(() => {
     const fetchGame = async () => {
       const gameData = await IMService.getGame(id as string);
       console.log("Fetched game data:", gameData);
@@ -39,19 +41,28 @@ export default function EventDetailScreen() {
       setLoading(false);
     };
     fetchGame();
-
   }, [id]);
+
+  const getTeamId = (teamName: string) => {
+    if(!game) return null;
+    return `${game.sport.toLowerCase()}_${game.tourney.toLowerCase()}_${teamName.toLowerCase()}`;
+  };
 
   useEffect(() => {
     const checkSubscription = async () => {
       if (!user || !game) return;
-      if(!game?.id){
-        console.error("Game ID is undefined");
-        return;
-      }
-      const subRef = doc(db, "users", user.uid, "subscriptions", game.id);
-      const subDoc = await getDoc(subRef);
-      setSubscribed(subDoc.exists());
+
+      const team1Id = getTeamId(game.team1);
+      const team2Id = getTeamId(game.team2);
+
+      const [doc1, doc2] = await Promise.all([
+        team1Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team1Id)) : null,
+        team2Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team2Id)) : null,
+      ]);
+
+      setTeam1Sub(doc1?.exists() ?? false);
+      setTeam2Sub(doc2?.exists() ?? false);
+      setSubscribed((doc1?.exists() ?? false) || (doc2?.exists() ?? false));
     };
     checkSubscription();
   }, [user, game]);
@@ -72,52 +83,86 @@ export default function EventDetailScreen() {
     );
   }
 
-  const handleSubscribe = async () => {
+  const addGameToCalendar = async () => {
     if (!game || !user) return;
-
-    if(!game?.id){
-      console.error("Game ID is undefined");
-      return;
-    }
 
     const subRef = doc(db, "users", user.uid, "subscriptions", game.id);
-
     await setDoc(subRef, {
-      clubId: game.id,
-      clubName: game.name,
+      id: game.id,
+      name: game.name,
       subscribedAt: new Date()
     });
-
     setSubscribed(true);
+
     const month = 
-      new Date().getFullYear() +
-      "-" +
-      String(new Date().getMonth() + 1).padStart(2, "0");
-    
+          new Date().getFullYear() +
+          "-" +
+          String(new Date().getMonth() + 1).padStart(2, "0");
+    console.log("Copying calendar for month:", month);
+    console.log("User ID:", user.uid);
+        
     await copyCalendar(user.uid, month);
+
+    alert("Game added to calendar!");
   };
 
-  const handleUnsubscribe = async () => {
+
+  const subscribeToTeam = async (teamName: string) => {
     if (!game || !user) return;
-    if(!game?.id){
-      console.error("Game ID is undefined");
-      return;
-    }
-    const uid = user.uid;
-    const gameId = game.id;
 
-    const subRef = doc(db, "users", uid, "subscriptions", gameId);
-  
-    await deleteDoc(subRef);
+    const teamId = getTeamId(teamName);
+    const batch = writeBatch(db);
 
-    const month = 
-      new Date().getFullYear() +
-      "-" +
-      String(new Date().getMonth() + 1).padStart(2, "0");
-
-    await copyCalendar(uid, month);
+    batch.set(doc(db, "users", user.uid, "subscriptions", teamId!), {
+      teamId,
+      teamName,
+      sport: game.sport,
+      tourney: game.tourney,
+      subscribedAt: new Date()
+    });
     
-    alert("Unsubscribed and meetings removed!");
+    const snap = await getDocs(collection(db, "intramurals"));
+
+    for (const d of snap.docs) {
+      const g = d.data() as Intramural;
+
+      if (
+        g.team1 === teamName &&
+        g.sport === game.sport &&
+        g.tourney === game.tourney
+      ) {
+        batch.set(
+          doc(db, "users", user.uid, "calendarCache", g.id),
+          g
+        );
+      }
+
+      if (
+        g.team2 === teamName &&
+        g.sport === game.sport &&
+        g.tourney === game.tourney
+      ) {
+        batch.set(
+          doc(db, "users", user.uid, "calendarCache", g.id),
+          g
+        );
+      }
+    }
+
+    await batch.commit();
+    alert(`Subscribed to ${teamName}`);
+    
+  };
+
+  const unsubscribe = async (teamName: string) => {
+      if (!user) return;
+
+      const teamId = getTeamId(teamName);
+      if (!teamId) return;
+
+      await deleteDoc(doc(db, "users", user.uid, "calendarCache", teamId));
+
+      alert(`Unsubscribed from ${teamName}`);
   };
 
   return (
@@ -157,16 +202,52 @@ export default function EventDetailScreen() {
       )}
 
       <TouchableOpacity
-        style={[
-          styles.calendarButton,
-          subscribed && { backgroundColor: "#999" }
-        ]}
-        onPress={subscribed ? handleUnsubscribe : handleSubscribe}
+        style={styles.calendarButton}
+        onPress={addGameToCalendar}
       >
         <Text style={styles.calendarButtonText}>
-          {subscribed ? "Remove from Calendar" : "Add Game to Calendar"}
+          Add This Game
         </Text>
       </TouchableOpacity>
+
+      {/* 🔔 Subscribe Team 1 */}
+      <TouchableOpacity
+        style={[
+          styles.calendarButton,
+          team1Sub && { backgroundColor: "#999" },
+        ]}
+        onPress={() =>
+          team1Sub
+            ? unsubscribe(game.team1)
+            : subscribeToTeam(game.team1)
+        }
+      >
+        <Text style={styles.calendarButtonText}>
+          {team1Sub
+            ? `Unfollow ${game.team1}`
+            : `Follow ${game.team1}`}
+        </Text>
+      </TouchableOpacity>
+
+      {/* 🔔 Subscribe Team 2 */}
+      <TouchableOpacity
+        style={[
+          styles.calendarButton,
+          team2Sub && { backgroundColor: "#999" },
+        ]}
+        onPress={() =>
+          team2Sub
+            ? unsubscribe(game.team2)
+            : subscribeToTeam(game.team2)
+        }
+      >
+        <Text style={styles.calendarButtonText}>
+          {team2Sub
+            ? `Unfollow ${game.team2}`
+            : `Follow ${game.team2}`}
+        </Text>
+      </TouchableOpacity>
+      
     
     </ScrollView>
   );

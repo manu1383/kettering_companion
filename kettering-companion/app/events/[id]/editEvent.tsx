@@ -74,7 +74,7 @@ export default function EditEventScreen() {
     const snapshot = await getDocs(collection(db, "meetings"));
 
     for (const meeting of snapshot.docs) {
-      if (meeting.data().clubId === eventId) {
+      if (meeting.data().id === eventId) {
         await deleteDoc(meeting.ref);
       }
     }

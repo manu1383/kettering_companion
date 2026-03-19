@@ -8,26 +8,9 @@ export class IMService {
     static getAllGames = async (): Promise<Intramural[]> => {
         const snapshot = await getDocs(collection(db, "intramurals"));
 
-        const meetings: Intramural[] = [];
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (data.team1 && data.team2 && data.location && data.schedule && data.sport) {
-                meetings.push({
-                    id: data.id,
-                    team1: data.team1,
-                    team2: data.team2,
-                    team1Id: data.team1Id,
-                    team2Id: data.team2Id,
-                    name: `${data.team1} vs ${data.team2}`,
-                    location: data.location,
-                    schedule: data.schedule,
-                    sport: data.sport,
-                    tourney: data.tourney
-                });
-            }
-        });
-
-        return meetings;
+        return snapshot.docs.map(
+            doc => ({ id: doc.id, ...doc.data() })
+        ) as Intramural[];
     };
     
     static getGame = async (id: string): Promise<Intramural | null> => {
@@ -35,29 +18,17 @@ export class IMService {
         const docSnap = await getDoc(docRef);
         console.log("Document snapshot:", docSnap);
 
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (data.team1 && data.team2 && data.location && data.schedule && data.sport) {
-                return {
-                    id: data.id,
-                    team1: data.team1,
-                    team2: data.team2,
-                    team1Id: data.team1Id,
-                    team2Id: data.team2Id,
-                    name: `${data.team1} vs ${data.team2}`,
-                    location: data.location,
-                    schedule: data.schedule,
-                    sport: data.sport,
-                    tourney: data.tourney
-                };
-            }
-        }
+        if (!docSnap.exists()) { return null; }
 
-        return null;
+        return { id: docSnap.id, ...docSnap.data() } as Intramural;
     };
 
     static createGame = async (game: Intramural) => {
         await setDoc(doc(db, "intramurals", game.id), game);
+
+        const meetings = generateMeetingDates(game.schedule ?? []);
+        console.log("Game schedule: ", game.schedule);
+        await IMService.createMeetings(game, meetings);
     };
 
     static updateGame = async (id: string, game: Partial<Intramural>) => {
@@ -83,12 +54,12 @@ export class IMService {
                 id: intramural.id,
                 team1: intramural.team1,
                 team2: intramural.team2,
-                team1Id: intramural.team1Id,
-                team2Id: intramural.team2Id,
                 name: intramural.name,
                 sport: intramural.sport,
                 tourney: intramural.tourney,
-                schedule: intramural.schedule,
+                date: dateString,
+                startTime: game.startTime,
+                endTime: game.endTime,
                 location: intramural.location ?? ""
             });
         }

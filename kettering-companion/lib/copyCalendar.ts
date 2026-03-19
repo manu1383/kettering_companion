@@ -5,7 +5,7 @@ export async function copyCalendar(userId: string, month: string) {
 
   const res = await fetch(url);
 
-  const text = await res.text(); // 👈 prevents silent crashes
+  const text = await res.text();
   console.log("Calendar raw response:", text);
 
   if (!res.ok) {

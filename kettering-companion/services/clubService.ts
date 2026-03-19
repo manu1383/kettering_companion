@@ -62,15 +62,15 @@ export class ClubService {
         await deleteDoc(doc(db, "clubs", id));
     };
 
-    static async addOfficer(clubId: string, uid: string) {
-        const ref = doc(db, "clubs", clubId);
+    static async addOfficer(id: string, uid: string) {
+        const ref = doc(db, "clubs", id);
         await updateDoc(ref, {
             officers: arrayUnion(uid)
         });
     };
 
-    static async removeOfficer(clubId: string, uid: string) {
-        const ref = doc(db, "clubs", clubId);
+    static async removeOfficer(id: string, uid: string) {
+        const ref = doc(db, "clubs", id);
         await updateDoc(ref, {
             officers: arrayRemove(uid)
         });
@@ -86,8 +86,8 @@ export class ClubService {
                 String(meeting.date.getDate()).padStart(2, "0");
             const ref = doc(collection(db, "meetings"), `${club.id}-${dateString}`);
             await setDoc(ref, {
-                clubId: club.id,
-                clubName: club.name,
+                id: club.id,
+                name: club.name,
                 date: dateString,
                 startTime: meeting.startTime,
                 endTime: meeting.endTime,
@@ -101,7 +101,7 @@ export class ClubService {
         // Remove existing meetings for this club
         const snapshot = await getDocs(collection(db, "meetings"));
         for (const meetingDoc of snapshot.docs) {
-            if (meetingDoc.data().clubId === club.id) {
+            if (meetingDoc.data().id === club.id) {
                 await deleteDoc(meetingDoc.ref);
             }
         }

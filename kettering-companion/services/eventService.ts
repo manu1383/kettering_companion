@@ -83,8 +83,8 @@ export class EventService {
                 String(meeting.date.getDate()).padStart(2, "0");
             const ref = doc(collection(db, "meetings"), `${event.id}-${dateString}`);
             await setDoc(ref, {
-                clubId: event.id,
-                clubName: event.name,
+                id: event.id,
+                name: event.name,
                 date: dateString,
                 startTime: meeting.startTime,
                 endTime: meeting.endTime,
@@ -98,7 +98,7 @@ export class EventService {
         // Remove existing meetings for this club
         const snapshot = await getDocs(collection(db, "meetings"));
         for (const meetingDoc of snapshot.docs) {
-            if (meetingDoc.data().clubId === event.id) {
+            if (meetingDoc.data().id === event.id) {
                 await deleteDoc(meetingDoc.ref);
             }
         }

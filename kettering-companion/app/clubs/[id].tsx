@@ -85,8 +85,8 @@ export default function ClubDetailScreen() {
     const subRef = doc(db, "users", user.uid, "subscriptions", club.id);
 
     await setDoc(subRef, {
-      clubId: club.id,
-      clubName: club.name,
+      id: club.id,
+      name: club.name,
       subscribedAt: new Date()
     });
 
@@ -134,9 +134,9 @@ export default function ClubDetailScreen() {
         <>
           <Text style={styles.sectionTitle}>Meeting Times: </Text>
           {club.schedule.map((m, i) => (
-            <Text key={i} style={styles.schedule}>
-              {getWeekdayName(m.weekday)} • {m.frequency} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
-            </Text>
+              <Text key={i} style={styles.schedule}>
+                {getWeekdayName(m.weekday? m.weekday : 0)} • {m.frequency} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+              </Text>
           ))}
         </>
       )}

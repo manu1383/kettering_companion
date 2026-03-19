@@ -82,8 +82,8 @@ export default function EventDetailScreen() {
     const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
 
     await setDoc(subRef, {
-      clubId: event.id,
-      clubName: event.name,
+      id: event.id,
+      name: event.name,
       subscribedAt: new Date()
     });
 

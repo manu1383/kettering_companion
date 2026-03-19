@@ -36,7 +36,7 @@ export default function CreateIntramuralScreen() {
             setTimeError("Please enter valid start and end times.");
             return;
         }
-        values.name = `${values.team1} vs ${values.team2}`;
+        values.name = `${values.team1} vs ${values.team2} ${values.sport}`;
     
         const gameId = values.name.toLowerCase().replace(/\s+/g, "-");
     
