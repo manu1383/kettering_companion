@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from "react-native";
+import { requestNotificationPermissions, scheduleEventNotification } from "@/services/notifications";
 
 const HOUR_HEIGHT = 60;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -91,6 +92,11 @@ export default function DaySchedule() {
         .filter(Boolean);
 
       setEvents(parsedEvents);
+
+      const granted = await requestNotificationPermissions();
+      if (granted) {
+        parsedEvents.forEach(scheduleEventNotification);
+      }
 
     } catch (error) {
       console.error("Calendar import failed:", error);

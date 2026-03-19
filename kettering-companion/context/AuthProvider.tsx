@@ -7,6 +7,8 @@ interface AuthContextType {
   user: User | null;
   role: string | null;
   loading: boolean;
+  subscribedClubs: string[];
+  setSubscribedClubs: (clubs: string[]) => void;
   setUser: (user: User | null) => void;
 }
 
@@ -15,6 +17,8 @@ export const AuthContext = createContext<AuthContextType>({
   role: null,
   loading: true,
   setUser: () => {},
+  subscribedClubs: [],
+  setSubscribedClubs: () => {},
 });
 
 interface AuthProviderProps {
@@ -25,6 +29,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subscribedClubs, setSubscribedClubs] = useState<string[]>([]);
 
   const checkOfficerStatus = async (currentUser: User) => {
     try {
@@ -71,8 +76,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           setRole(userDoc.data().role);
+          setSubscribedClubs(userDoc.data().subscribedClubs || []);
         } else {
           setRole("student");
+          setSubscribedClubs([]);
         }
         await checkOfficerStatus(currentUser);
       } catch (error) {
@@ -85,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, setUser }}>
+    <AuthContext.Provider value={{ user, role, loading, setUser, subscribedClubs, setSubscribedClubs }}>
       {children}
     </AuthContext.Provider>
   );
