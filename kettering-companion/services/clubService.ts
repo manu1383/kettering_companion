@@ -73,4 +73,11 @@ export class ClubService {
             doc(db, "users", uid, "subscriptions", clubId)
         );
     };
+
+    static async getUserSubscribedClubs(uid: string): Promise<string[]> {
+        const snapshot = await getDocs(
+            collection(db, "users", uid, "subscriptions")
+        );
+        return snapshot.docs.map(doc => doc.id);
+    };
 }
