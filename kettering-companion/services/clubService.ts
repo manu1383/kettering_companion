@@ -108,4 +108,24 @@ export class ClubService {
         // Create new meetings
         await ClubService.createMeetings(club, meetings);
     };
+
+    static subscribeToClub = async (uid: string, clubId: string) => {
+        await setDoc(
+            doc(db, "users", uid, "subscriptions", clubId),
+            { clubId }
+        );
+    };
+
+    static unsubscribeFromClub = async (uid: string, clubId: string) => {
+        await deleteDoc(
+            doc(db, "users", uid, "subscriptions", clubId)
+        );
+    };
+
+    static async getUserSubscribedClubs(uid: string): Promise<string[]> {
+        const snapshot = await getDocs(
+            collection(db, "users", uid, "subscriptions")
+        );
+        return snapshot.docs.map(doc => doc.id);
+    };
 }

@@ -9,10 +9,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { AuthContext } from "../../context/AuthProvider";
 import { copyCalendar } from "../../lib/copyCalendar";
+import { AuthContext } from "../../context/AuthProvider";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/subscription";
@@ -29,8 +29,25 @@ export default function ClubDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [officers, setOfficers] = useState<Officer[]>([]);
-  const [subscribed, setSubscribed] = useState(false);
+  const {user, subscribedClubs} = useContext(AuthContext);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
+  const toggleSubscription = async (clubId: string, subscribe: boolean) => {
+    try {
+      if (subscribe) {
+        console.log(`Subscribing user ${user!.uid} to club ${clubId}`);
+        await ClubService.subscribeToClub(user!.uid, clubId);
+        setIsSubscribed(true);
+      } else {
+        await ClubService.unsubscribeFromClub(user!.uid, clubId);
+        setIsSubscribed(false);
+      }
+    } catch (err) {
+      console.error("Subscription error:", err);
+      setError("Failed to update subscription. Please try again.");
+    }
+};
+  
   useEffect(() => {
     const fetchClub = async () => {
       const clubData = await ClubService.getClub(id as string);
@@ -38,6 +55,10 @@ export default function ClubDetailScreen() {
       setClub(clubData);
       const officerData = await UserService.getOfficersFromIds(clubData.officers ?? []);
       setOfficers(officerData);
+
+      const subDoc = await getDoc(doc(db, "users", user!.uid, "subscriptions", id as string));
+      setIsSubscribed(subDoc.exists());
+      
       setLoading(false);
     };
     fetchClub();
@@ -176,6 +197,15 @@ export default function ClubDetailScreen() {
       )}
 
       <TouchableOpacity
+          style={styles.subscribeButton}
+          onPress={() => toggleSubscription(club.id!, !isSubscribed)}
+      >
+          <Text style={styles.subscribeButtonText}>
+              {isSubscribed ? "Unsubscribe" : "Subscribe"}
+          </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={[
           styles.calendarButton,
           subscribed && { backgroundColor: "#999" }
@@ -271,5 +301,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,
+  },
+  subscribeButton: {
+    backgroundColor: "#4BA3C7",
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  subscribeButtonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "700",
   },
 });
