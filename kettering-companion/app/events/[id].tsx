@@ -1,6 +1,6 @@
 import { AuthContext } from "@/context/AuthProvider";
 import { copyCalendar } from "@/lib/copyCalendar";
-import { getWeekdayName, to12Hour } from "@/lib/time";
+import { formatDate, to12Hour } from "@/lib/time";
 import { useLocalSearchParams } from "expo-router";
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
@@ -133,7 +133,7 @@ export default function EventDetailScreen() {
           <Text style={styles.sectionTitle}>Event Time: </Text>
           {event.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
-              {m.weekday !== undefined && getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+              {formatDate(m.startDate)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
             </Text>
           ))}
         </>

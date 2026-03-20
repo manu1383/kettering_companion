@@ -1,17 +1,17 @@
 import { AuthContext } from "@/context/AuthProvider";
 import { copyCalendar } from "@/lib/copyCalendar";
 import { formatDate, to12Hour } from "@/lib/time";
-import { IMService } from "@/services/imService";
+import { IMService } from "@/services/fitnessService";
 import { useLocalSearchParams } from "expo-router";
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, writeBatch } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { db } from "../../lib/firebase";
 import { Intramural } from "../../types/subscription";

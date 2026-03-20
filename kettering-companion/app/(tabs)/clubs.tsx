@@ -43,9 +43,13 @@ export default function ClubsScreen() {
     });
 
     const renderClub = ({ item }: { item: Club }) => {
-        const scheduleText =
-            item.schedule
-                ?.map((m) => `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
+        const scheduleText = item.schedule?.map((m) => {
+            const days = (m.weekdays || [])
+                .map((d) => getPluralWeekday(d))
+                .join(", ");
+
+            return `${days} • ${formatFrequency(m.frequency ?? "")} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+        });
         
         const isOfficer =
             item.officers?.includes(user?.uid ?? "");

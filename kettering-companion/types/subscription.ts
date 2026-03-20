@@ -1,5 +1,5 @@
 export interface MeetingTime {
-    weekday?: number;
+    weekdays?: number[];
     frequency?: "weekly" | "biweekly" | "monthly" | "never";
     startDate: string;
     endDate?: string;
@@ -22,7 +22,7 @@ export interface Event {
     name: string;
     description?: string;
     location?: string;
-    contactEmail: string;
+    contactEmail?: string;
     schedule: MeetingTime[];
     attendees?: string[];
 }
@@ -41,3 +41,4 @@ export interface Intramural {
     sport: string;
     tourney: string;
 }
+

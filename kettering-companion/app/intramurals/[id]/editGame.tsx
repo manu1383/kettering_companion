@@ -7,7 +7,7 @@ import {
     View
 } from "react-native";
 import { db } from "../../../lib/firebase";
-import { IMService } from "../../../services/imService";
+import { IMService } from "../../../services/fitnessService";
 import { Intramural } from "../../../types/subscription";
 
 

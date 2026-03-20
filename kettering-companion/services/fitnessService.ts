@@ -4,7 +4,7 @@ import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from "
 import { db } from "../lib/firebase";
 
 
-export class IMService {
+export class FitnessService {
     static getAllGames = async (): Promise<Intramural[]> => {
         const snapshot = await getDocs(collection(db, "intramurals"));
 
@@ -28,7 +28,7 @@ export class IMService {
 
         const meetings = generateMeetingDates(game.schedule ?? []);
         console.log("Game schedule: ", game.schedule);
-        await IMService.createMeetings(game, meetings);
+        await FitnessService.createMeetings(game, meetings);
     };
 
     static updateGame = async (id: string, game: Partial<Intramural>) => {
@@ -75,7 +75,7 @@ export class IMService {
             }
         }
         // Create new meetings
-        await IMService.createMeetings(game, meetings);
+        await FitnessService.createMeetings(game, meetings);
     };
 }
 

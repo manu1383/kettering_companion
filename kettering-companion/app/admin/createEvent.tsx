@@ -17,7 +17,7 @@ export default function CreateEventScreen() {
     contactEmail: "",
     schedule: [
       {
-        weekday: 1,
+        weekdays: [],
         frequency: "never",
         startDate: "",
         endDate: "",

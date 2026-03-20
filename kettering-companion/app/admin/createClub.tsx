@@ -18,7 +18,7 @@ export default function CreateClubScreen() {
     contactEmail: "",
     schedule: [
       {
-        weekday: 1,
+        weekdays: [],
         frequency: "weekly",
         startDate: "",
         endDate: "",

@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import IntramuralForm from "../../components/IntramuralForm";
 import { parseTime } from "../../lib/time";
-import { IMService } from "../../services/imService";
+import { IMService } from "../../services/fitnessService";
 import { Intramural } from "../../types/subscription";
 
 export default function CreateIntramuralScreen() {

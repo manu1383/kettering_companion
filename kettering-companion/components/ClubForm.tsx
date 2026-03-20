@@ -10,6 +10,7 @@ type Props = {
     timeError?: string | null;
     onDelete?: () => void;
     isEvent?: boolean;
+    isFitnessClass?: boolean;
 };
 
 export default function ClubForm({
@@ -19,7 +20,8 @@ export default function ClubForm({
   submitLabel,
   timeError,
   onDelete,
-  isEvent
+  isEvent,
+  isFitnessClass
 }: Props) {
 
     const update = (field: keyof Club, value: any) => {
@@ -47,6 +49,28 @@ export default function ClubForm({
             officers: value ? [value] : []
         }));
     };
+
+    const toggleWeekday = (day: number) => {
+        setValues((prev) => {
+            const current = prev.schedule[0];
+            const weekdays = current.weekdays || [];
+
+            const exists = weekdays.includes(day);
+
+            return {
+                ...prev,
+                schedule: [
+                    {
+                        ...current,
+                        weekdays: exists
+                            ? weekdays.filter((d) => d !== day)
+                            : [...weekdays, day]
+                    }
+                ]
+            };
+        });
+    };
+
     const time = values.schedule[0];
 
     return (
@@ -79,17 +103,17 @@ export default function ClubForm({
             onChangeText={(t) => update("location", t)}
             style={styles.input}
         />
-
-        <Text style={styles.label}>Contact Email</Text>
-        <TextInput
-            placeholder="Contact Email"
-            placeholderTextColor='#888'
-            value={values.contactEmail}
-            onChangeText={(t) => update("contactEmail", t)}
-            style={styles.input}
-        />
-
-        {!isEvent &&
+        {!isFitnessClass && 
+            <><Text style={styles.label}>Contact Email</Text>
+            <TextInput
+                placeholder="Contact Email"
+                placeholderTextColor='#888'
+                value={values.contactEmail}
+                onChangeText={(t) => update("contactEmail", t)}
+                style={styles.input}
+            /></>
+        }
+        {!isEvent && !isFitnessClass &&
             <><Text style={styles.label}>Officer Email (sets permissions)</Text>
             <TextInput
             placeholder="Officer Email (sets permissions)"
@@ -99,25 +123,53 @@ export default function ClubForm({
             style={styles.input}
             /></>
         }
+        {isFitnessClass &&
+            <><Text style={styles.label}>Instructor Email (sets permissions)</Text>
+            <TextInput
+            placeholder="Instructor Email (sets permissions)"
+            placeholderTextColor='#888'
+            value={values.officers?.[0] ?? ""}
+            onChangeText={(t) => updateOfficer(t)}
+            style={styles.input}
+            /></>
+        }
         
-
-        <Text style={styles.subHeader}>Meeting Schedule</Text>
+        <Text style={styles.subHeader}> Schedule</Text>
 
         <Text style={styles.label}>Day of Week</Text>
 
-        <View style={styles.picker}>
-            <Picker
-            selectedValue={time.weekday}
-            onValueChange={(v) => updateSchedule("weekday", v)}
-            >
-            <Picker.Item label="Monday" value={1}/>
-            <Picker.Item label="Tuesday" value={2}/>
-            <Picker.Item label="Wednesday" value={3}/>
-            <Picker.Item label="Thursday" value={4}/>
-            <Picker.Item label="Friday" value={5}/>
-            <Picker.Item label="Saturday" value={6}/>
-            <Picker.Item label="Sunday" value={0}/>
-            </Picker>
+        <View style={styles.weekdayContainer}>
+            {[
+                { label: "M", value: 1 },
+                { label: "T", value: 2 },
+                { label: "W", value: 3 },
+                { label: "Th", value: 4 },
+                { label: "F", value: 5 },
+                { label: "Sa", value: 6 },
+                { label: "Su", value: 0 },
+            ].map((day) => {
+                const selected = time.weekdays?.includes(day.value);
+
+                return (
+                <TouchableOpacity
+                    key={day.value}
+                    style={[
+                    styles.dayButton,
+                    selected && styles.dayButtonSelected
+                    ]}
+                    onPress={() => toggleWeekday(day.value)}
+                >
+                    <Text
+                    style={[
+                        styles.dayText,
+                        selected && styles.dayTextSelected
+                    ]}
+                    >
+                    {day.label}
+                    </Text>
+                </TouchableOpacity>
+                );
+            })}
         </View>
 
         {!isEvent && (
@@ -179,7 +231,7 @@ export default function ClubForm({
             <Text style={styles.buttonText}>{submitLabel}</Text>
         </TouchableOpacity>
 
-        {onDelete && !isEvent && (
+        {onDelete && !isEvent && !isFitnessClass && (
             <TouchableOpacity style={[styles.button, { backgroundColor: "red", marginTop: 10 }]} onPress={onDelete}>
                 <Text style={styles.buttonText}>Delete Club</Text>
             </TouchableOpacity>
@@ -188,6 +240,12 @@ export default function ClubForm({
         {onDelete && isEvent && (
             <TouchableOpacity style={[styles.button, { backgroundColor: "red", marginTop: 10 }]} onPress={onDelete}>
                 <Text style={styles.buttonText}>Delete Event</Text>
+            </TouchableOpacity>
+        )}
+
+        {onDelete && isFitnessClass && (
+            <TouchableOpacity style={[styles.button, { backgroundColor: "red", marginTop: 10 }]} onPress={onDelete}>
+                <Text style={styles.buttonText}>Delete Fitness Class</Text>
             </TouchableOpacity>
         )}
 
@@ -203,5 +261,31 @@ const styles = StyleSheet.create({
   label:{ fontWeight:"700", marginBottom:10 },
   button:{ backgroundColor:"#4BA3C7", padding:14, borderRadius:14, alignItems:"center" },
   buttonText:{ color:"#fff", fontWeight:"700", fontSize:16 },
-  errorText:{ color:"red", marginBottom:10 }
+  errorText:{ color:"red", marginBottom:10 },
+  weekdayContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 15,
+    },
+
+    dayButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#eee",
+    },
+
+    dayButtonSelected: {
+    backgroundColor: "#4BA3C7",
+    },
+
+    dayText: {
+    color: "#333",
+    fontWeight: "600",
+    },
+
+    dayTextSelected: {
+    color: "#fff",
+    },
 });

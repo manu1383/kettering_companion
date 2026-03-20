@@ -11,8 +11,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { copyCalendar } from "../../lib/copyCalendar";
 import { AuthContext } from "../../context/AuthProvider";
+import { copyCalendar } from "../../lib/copyCalendar";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/subscription";
@@ -105,54 +105,6 @@ export default function ClubDetailScreen() {
     );
   }
 
-  const handleSubscribe = async () => {
-    if (!club || !user) return;
-
-    if(!club?.id){
-      console.error("Club ID is undefined");
-      return;
-    }
-
-    const subRef = doc(db, "users", user.uid, "subscriptions", club.id);
-
-    await setDoc(subRef, {
-      id: club.id,
-      name: club.name,
-      subscribedAt: new Date()
-    });
-
-    setSubscribed(true);
-    const month = 
-      new Date().getFullYear() +
-      "-" +
-      String(new Date().getMonth() + 1).padStart(2, "0");
-    
-    await copyCalendar(user.uid, month);
-  };
-
-  const handleUnsubscribe = async () => {
-    if (!club || !user) return;
-    if(!club?.id){
-      console.error("Club ID is undefined");
-      return;
-    }
-    const uid = user.uid;
-    const id = club.id;
-
-    const subRef = doc(db, "users", uid, "subscriptions", id);
-  
-    await deleteDoc(subRef);
-
-    const month = 
-      new Date().getFullYear() +
-      "-" +
-      String(new Date().getMonth() + 1).padStart(2, "0");
-
-    await copyCalendar(uid, month);
-    
-    alert("Unsubscribed and meetings removed!");
-  };
-
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.name}>{club.name}</Text>
@@ -161,17 +113,21 @@ export default function ClubDetailScreen() {
         <Text style={styles.description}>{club.description}</Text>
       )}
 
-      {club.schedule && (
-        <>
-          <Text style={styles.sectionTitle}>Meeting Times:</Text>
-          {club.schedule.map((m, i) => (
-            <Text key={i} style={styles.schedule}>
-              {getWeekdayName(m.weekday)} • {m.frequency} •{" "}
-              {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
-            </Text>
-          ))}
-        </>
-      )}
+      {club.schedule.map((m, i) => {
+        const daysArr = (m.weekdays || []).map((d) => getWeekdayName(d));
+
+        const days =
+          daysArr.length > 1
+            ? `${daysArr.slice(0, -1).join(", ")} & ${daysArr.slice(-1)}`
+            : daysArr[0] || "";
+
+        return (
+          <Text key={i} style={styles.schedule}>
+            {days} • {m.frequency} •{" "}
+            {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+          </Text>
+        );
+      })}
 
       {club.location && (
         <>

@@ -5,10 +5,11 @@ import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
-import { IMService } from '../../services/imService';
+import { FitnessService } from '../../services/fitnessService';
 import { Intramural } from '../../types/subscription';
 
 export default function FitnessScreen() {
+    const [view, setView] = useState<"fitness" | "intramurals">("intramurals");
     const { role } = useContext(AuthContext);
     const router = useRouter();
     const [games, setGames] = useState<Intramural[]>([]);
@@ -26,7 +27,7 @@ export default function FitnessScreen() {
 
     useEffect(() => {
         const fetchGames = async () => {
-            const data = await IMService.getAllGames();
+            const data = await FitnessService.getAllGames();
             data.sort((a, b) => {
                 const aStart = a.schedule?.[0];
                 const bStart = b.schedule?.[0];
@@ -142,8 +143,48 @@ export default function FitnessScreen() {
     return (
         <View style={styles.container}>
 
-            <Text style={styles.header}>Intramurals</Text>
+            <Text style={styles.header}>
+                {view === "intramurals" ? "Intramurals" : "Fitness Classes"}
+            </Text>
 
+            <View style={styles.toggleContainer}>
+                <TouchableOpacity
+                    style={[
+                    styles.toggleButton,
+                    view === "intramurals" && styles.activeToggle
+                    ]}
+                    onPress={() => setView("intramurals")}
+                >
+                    <Text
+                        style={[
+                            styles.toggleText,
+                            view === "intramurals" && styles.activeText
+                        ]}
+                        >
+                        Intramurals
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                    styles.toggleButton,
+                    view === "fitness" && styles.activeToggle
+                    ]}
+                    onPress={() => setView("fitness")}
+                >
+                    <Text
+                        style={[
+                            styles.toggleText,
+                            view === "fitness" && styles.activeText
+                        ]}
+                    >
+                        Fitness Classes
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {view === "intramurals" ? (
+            <>
             <TextInput
                 placeholder="Search intramurals..."
                 value={search}
@@ -212,7 +253,14 @@ export default function FitnessScreen() {
                 <Text style={styles.emptyText}>No intramurals found.</Text>
                 }
             />
+            </> 
+            ) : (
+                <View style={{marginTop: 40, alignItems: "center"}}>
+                    <Text style={{color: "#555", fontSize: 16}}>Fitness classes coming soon!</Text>
+                </View>
+            )}
         </View>
+
     );
 }
 
@@ -292,5 +340,27 @@ const styles = StyleSheet.create({
         width: "30%",
         backgroundColor: "#eee",
         borderRadius: 5,
+    },
+    toggleContainer: {
+        flexDirection: "row",
+        backgroundColor: "#d9e6eb",
+        borderRadius: 12,
+        marginBottom: 15,
+        overflow: "hidden",
+    },
+    toggleButton: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: "center",
+    },
+    activeToggle: {
+        backgroundColor: "#4BA3C7",
+    },
+    toggleText: {
+        fontWeight: "600",
+        color: "#1D3D47",
+    },
+    activeText: {
+        color: "#fff",
     },
 });
