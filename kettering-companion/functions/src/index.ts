@@ -1,12 +1,9 @@
-import cors from "cors";
 import * as admin from "firebase-admin";
 import { onRequest } from "firebase-functions/v2/https";
 import { google } from "googleapis";
 
 admin.initializeApp();
 const db = admin.firestore();
-
-const corsHandler = cors({ origin: true });
 
 class CalendarService {
 
@@ -44,11 +41,12 @@ class CalendarService {
       .doc(userId)
       .collection("subscriptions")
       .get();
-    const clubIds: string[] = [];
+    const ids: string[] = [];
     snapshot.forEach(doc => {
-      clubIds.push(doc.id);
+      ids.push(doc.id);
     });
-    return clubIds;
+    console.log("User subscriptions:", ids);
+    return ids;
   }
 
   async getCachedCalendar(userId: string, month: string, force = false) {
@@ -110,13 +108,16 @@ class CalendarService {
     const meetings: any[] = [];
     snapshot.forEach(doc => {
       const data = doc.data();
-      if (!subscriptions.includes(data.clubId)) return;
+      const subSet = new Set(subscriptions);
+      if (
+        !subSet.has(data.id)
+      ) return;
       if (!data.date) return;
       const meetingDate = new Date(data.date);
       if (meetingDate >= start && meetingDate < end) {
         meetings.push({
           id: doc.id,
-          summary: `${data.clubName} Meeting`,
+          summary: `${data.name}`,
           start: {
             dateTime: `${data.date}T${data.startTime}:00`,
           },
@@ -128,12 +129,52 @@ class CalendarService {
     });
     return meetings;
   }
+
+  async fetchFitnessEvents(userId: string, month: string) {
+    const start = new Date(`${month}-01`);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    const subscriptions = await this.getUserSubscriptions(userId);
+    if (subscriptions.length === 0) return [];
+    const snapshot = await db.collection("intramurals").get();
+    const fitnessEvents: any[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const subSet = new Set(subscriptions);
+      if (
+        !subSet.has(data.id)
+      ) return;
+      if (!data.startDate) return;
+      const meetingDate = new Date(data.startDate);
+      if (meetingDate >= start && meetingDate < end) {
+        fitnessEvents.push({
+          id: doc.id,
+          summary: `${data.name}`,
+          start: {
+            dateTime: `${data.startDate}T${data.startTime}:00`,
+          },
+          end: {
+            dateTime: `${data.startDate}T${data.endTime}:00`,
+          },
+        });
+      }
+    });
+    return fitnessEvents;
+  }
 }
 
-const calendarService = new CalendarService();
+export const refreshCalendar = onRequest(
+  { region: "us-central1" },
+  async (req, res) => {
 
-export const refreshCalendar = onRequest((req, res) => {
-  corsHandler(req, res, async () => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
 
     const userId =
       typeof req.query.userId === "string" ? req.query.userId : undefined;
@@ -147,8 +188,9 @@ export const refreshCalendar = onRequest((req, res) => {
     }
 
     try {
-
       const force = req.query.force === "true";
+
+      const calendarService = new CalendarService();
 
       const cached = await calendarService.getCachedCalendar(userId, month, force);
 
@@ -165,7 +207,10 @@ export const refreshCalendar = onRequest((req, res) => {
       const meetings =
         await calendarService.fetchMeetings(userId, month);
 
-      const events = [...googleEvents, ...meetings];
+      const fitness =
+        await calendarService.fetchFitnessEvents(userId, month);
+
+      const events = [...googleEvents, ...meetings, ...fitness];
 
       await calendarService.cacheCalendar(userId, month, events);
 
@@ -175,6 +220,5 @@ export const refreshCalendar = onRequest((req, res) => {
       console.error("Calendar fetch failed:", error);
       res.status(500).send("Calendar fetch failed");
     }
-
-  });
-});
+  }
+);

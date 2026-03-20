@@ -27,7 +27,7 @@ export default function ClubDetailScreen() {
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const toggleSubscription = async (clubId: string, subscribe: boolean) => {
+  const toggleSubscription = async (id: string, subscribe: boolean) => {
     try {
       if (!user) return;
 
@@ -37,13 +37,15 @@ export default function ClubDetailScreen() {
         String(new Date().getMonth() + 1).padStart(2, "0");
 
       if (subscribe) {
-        await ClubService.subscribeToClub(user.uid, clubId);
+        await ClubService.subscribeToClub(user.uid, id);
         await copyCalendar(user.uid, month);
         setIsSubscribed(true);
+        alert("Subscribed and meetings added to calendar!");
       } else {
-        await ClubService.unsubscribeFromClub(user.uid, clubId);
+        await ClubService.unsubscribeFromClub(user.uid, id);
         await copyCalendar(user.uid, month);
         setIsSubscribed(false);
+        alert("Unsubscribed and meetings removed from calendar!");
       }
     } catch (err) {
       console.error("Subscription error:", err);
@@ -103,6 +105,54 @@ export default function ClubDetailScreen() {
     );
   }
 
+  const handleSubscribe = async () => {
+    if (!club || !user) return;
+
+    if(!club?.id){
+      console.error("Club ID is undefined");
+      return;
+    }
+
+    const subRef = doc(db, "users", user.uid, "subscriptions", club.id);
+
+    await setDoc(subRef, {
+      id: club.id,
+      name: club.name,
+      subscribedAt: new Date()
+    });
+
+    setSubscribed(true);
+    const month = 
+      new Date().getFullYear() +
+      "-" +
+      String(new Date().getMonth() + 1).padStart(2, "0");
+    
+    await copyCalendar(user.uid, month);
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!club || !user) return;
+    if(!club?.id){
+      console.error("Club ID is undefined");
+      return;
+    }
+    const uid = user.uid;
+    const id = club.id;
+
+    const subRef = doc(db, "users", uid, "subscriptions", id);
+  
+    await deleteDoc(subRef);
+
+    const month = 
+      new Date().getFullYear() +
+      "-" +
+      String(new Date().getMonth() + 1).padStart(2, "0");
+
+    await copyCalendar(uid, month);
+    
+    alert("Unsubscribed and meetings removed!");
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.name}>{club.name}</Text>
@@ -137,13 +187,6 @@ export default function ClubDetailScreen() {
         </>
       )}
 
-      {club.instagram && (
-        <>
-          <Text style={styles.sectionTitle}>Instagram:</Text>
-          <Text style={styles.link}>{club.instagram}</Text>
-        </>
-      )}
-
       {officers.length > 0 && (
         <>
           <Text style={styles.sectionTitle}>Officers:</Text>
@@ -165,7 +208,7 @@ export default function ClubDetailScreen() {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={[
           styles.calendarButton,
           isSubscribed && { backgroundColor: "#999" }
@@ -177,7 +220,7 @@ export default function ClubDetailScreen() {
             ? "Remove from Calendar"
             : "Add Meetings to Calendar"}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </ScrollView>
   );
 }

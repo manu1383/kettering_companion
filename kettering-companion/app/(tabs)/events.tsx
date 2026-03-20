@@ -1,4 +1,4 @@
-﻿import { formatDate, getWeekdayName, to12Hour } from '@/lib/time';
+﻿import { formatDate, to12Hour } from '@/lib/time';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
@@ -34,7 +34,7 @@ export default function EventsScreen() {
     const renderEvent = ({ item }: { item: Event }) => {
         const scheduleText =
             item.schedule
-                ?.map((m) => `${getWeekdayName(m.weekday)}, ${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
+                ?.map((m) => `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
             
         
         const canManage = role === "admin";

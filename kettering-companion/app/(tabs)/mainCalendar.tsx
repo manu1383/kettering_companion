@@ -59,8 +59,8 @@ export default function DaySchedule() {
     }
 
     return {
-      id: event.id || `${event.clubId}-${event.date}`,
-      title: event.summary || `${event.clubName} Meeting`,
+      id: event.id || `${event.id}-${event.date}`,
+      title: event.summary || `${event.name}`,
       startDate,
       endDate,
       allDay: isAllDay,
