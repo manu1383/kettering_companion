@@ -45,26 +45,27 @@ export default function EventDetailScreen() {
 
   const getTeamId = (teamName: string) => {
     if(!game) return null;
-    return `${game.sport.toLowerCase()}_${game.tourney.toLowerCase()}_${teamName.toLowerCase()}`;
+    return `${game.sport}_${game.tourney}_${teamName}`.toLowerCase().replace(/\s+/g, "-");
+  };
+
+  const checkSubscription = async () => {
+    if (!user || !game) return;
+
+    const team1Id = getTeamId(game.team1);
+    const team2Id = getTeamId(game.team2);
+
+    const [doc1, doc2, gameDoc] = await Promise.all([
+      team1Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team1Id)) : null,
+      team2Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team2Id)) : null,
+      getDoc(doc(db, "users", user.uid, "subscriptions", game.id))
+    ]);
+
+    setTeam1Sub(doc1?.exists() ?? false);
+    setTeam2Sub(doc2?.exists() ?? false);
+    setSubscribed(gameDoc.exists());
   };
 
   useEffect(() => {
-    const checkSubscription = async () => {
-      if (!user || !game) return;
-
-      const team1Id = getTeamId(game.team1);
-      const team2Id = getTeamId(game.team2);
-
-      const [doc1, doc2, gameDoc] = await Promise.all([
-        team1Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team1Id)) : null,
-        team2Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team2Id)) : null,
-        getDoc(doc(db, "users", user.uid, "subscriptions", game.id))
-      ]);
-
-      setTeam1Sub(doc1?.exists() ?? false);
-      setTeam2Sub(doc2?.exists() ?? false);
-      setSubscribed(gameDoc.exists());
-    };
     checkSubscription();
   }, [user, game]);
 
@@ -126,8 +127,7 @@ export default function EventDetailScreen() {
   const subscribeToTeam = async (teamName: string) => {
     if (!game || !user) return;
 
-    const teamId = getTeamId(teamName).replace(/\s+/g, "-");
-    console.log("Team ID for subscription:", teamId);
+    const teamId = getTeamId(teamName)!;
     const batch = writeBatch(db);
 
     batch.set(doc(db, "users", user.uid, "subscriptions", teamId), {
@@ -143,7 +143,6 @@ export default function EventDetailScreen() {
 
     for (const d of snap.docs) {
       const g = d.data() as Intramural;
-
       if (
         (g.team1Id === teamId || g.team2Id === teamId) &&
         g.sport === game.sport &&
@@ -169,29 +168,30 @@ export default function EventDetailScreen() {
 
     await copyCalendar(user.uid, month);
 
+    await checkSubscription();
+
     alert(`Subscribed to ${teamName}`);
     
   };
 
   const unsubscribeFromTeam = async (teamName: string) => {
-      if (!user) return;
+      if (!user || !game) return;
 
-      const teamId = getTeamId(teamName).replace(/\s+/g, "-");
-      console.log("Team ID for unsubscription:", teamId);
+      const teamId = getTeamId(teamName)!;
       const batch = writeBatch(db);
 
       batch.delete(doc(db, "users", user.uid, "subscriptions", teamId));
 
-      const snap = await getDocs(collection(db, "users", user.uid, "calendarCache"));
+      const snap = await getDocs(collection(db, "users", user.uid, "subscriptions"));
 
       for (const d of snap.docs) {
-        const g = d.data() as Intramural;
+        const data = d.data();
 
         if (
           data.type === "game" &&
-          (g.team1 === teamName || g.team2 === teamName) &&
-          g.sport === game?.sport &&
-          g.tourney === game?.tourney
+          (data.team1Id === teamId || data.team2Id === teamId) &&
+          data.sport === game?.sport &&
+          data.tourney === game?.tourney
         ) {
           batch.delete(d.ref);
         }
@@ -208,6 +208,8 @@ export default function EventDetailScreen() {
         String(new Date().getMonth() + 1).padStart(2, "0");
 
       await copyCalendar(user.uid, month);
+
+      await checkSubscription();
 
       alert(`Unsubscribed from ${teamName}`);
   };
