@@ -104,7 +104,7 @@ export default function FitnessScreen() {
             <Text style={styles.name}>{item.name}</Text>
 
             <Text style={styles.schedule}>
-                {[scheduleText, item.tourney + '-Tourney ' + item.sport].filter(Boolean).join(" • ")}
+                {[scheduleText, item.tourney + '-Tourney'].filter(Boolean).join(" • ")}
             </Text>
             {canManage && 
                 <TouchableOpacity

@@ -39,13 +39,15 @@ export default function CreateIntramuralScreen() {
         values.name = `${values.team1} vs ${values.team2} ${values.sport}`;
     
         const gameId = values.name.toLowerCase().replace(/\s+/g, "-");
-    
+        const team1Id = (values.sport+"_"+values.tourney+"_"+values.team1).toLowerCase().replace(/\s+/g, "-");;
+        const team2Id = (values.sport+"_"+values.tourney+"_"+values.team2).toLowerCase().replace(/\s+/g, "-");;
+
         const updatedGame = {
             ...values,
             id: gameId,
             name: values.name,
-            team1Id: values.sport.toLowerCase()+"_"+values.tourney.toLowerCase()+"_"+values.team1.toLowerCase(),
-            team2Id: values.sport.toLowerCase()+"_"+values.tourney.toLowerCase()+"_"+values.team2.toLowerCase(),
+            team1Id: team1Id,
+            team2Id: team2Id,
             schedule: [
             {
                 ...time,

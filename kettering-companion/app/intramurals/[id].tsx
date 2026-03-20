@@ -107,65 +107,6 @@ export default function EventDetailScreen() {
     alert("Game added to calendar!");
   };
 
-
-  const subscribeToTeam = async (teamName: string) => {
-    if (!game || !user) return;
-
-    const teamId = getTeamId(teamName);
-    const batch = writeBatch(db);
-
-    batch.set(doc(db, "users", user.uid, "subscriptions", teamId!), {
-      teamId,
-      teamName,
-      sport: game.sport,
-      tourney: game.tourney,
-      subscribedAt: new Date()
-    });
-    
-    const snap = await getDocs(collection(db, "intramurals"));
-
-    for (const d of snap.docs) {
-      const g = d.data() as Intramural;
-
-      if (
-        g.team1 === teamName &&
-        g.sport === game.sport &&
-        g.tourney === game.tourney
-      ) {
-        batch.set(
-          doc(db, "users", user.uid, "calendarCache", g.id),
-          g
-        );
-      }
-
-      if (
-        g.team2 === teamName &&
-        g.sport === game.sport &&
-        g.tourney === game.tourney
-      ) {
-        batch.set(
-          doc(db, "users", user.uid, "calendarCache", g.id),
-          g
-        );
-      }
-    }
-
-    await batch.commit();
-    alert(`Subscribed to ${teamName}`);
-    
-  };
-
-  const unsubscribeFromTeam = async (teamName: string) => {
-      if (!user) return;
-
-      const teamId = getTeamId(teamName);
-      if (!teamId) return;
-
-      await deleteDoc(doc(db, "users", user.uid, "calendarCache", teamId));
-
-      alert(`Unsubscribed from ${teamName}`);
-  };
-
   const unsubscribeFromGame = async () => {
     if (!user || !game) return;
     const uid = user.uid;
@@ -179,7 +120,96 @@ export default function EventDetailScreen() {
       String(new Date().getMonth() + 1).padStart(2, "0");
 
     await copyCalendar(uid, month);
-    alert("Unsubscribed from game and removed from calendar!");
+    alert("Game removed from calendar!");
+  };
+
+  const subscribeToTeam = async (teamName: string) => {
+    if (!game || !user) return;
+
+    const teamId = getTeamId(teamName).replace(/\s+/g, "-");
+    console.log("Team ID for subscription:", teamId);
+    const batch = writeBatch(db);
+
+    batch.set(doc(db, "users", user.uid, "subscriptions", teamId), {
+      type: "team",
+      teamId,
+      teamName,
+      sport: game.sport,
+      tourney: game.tourney,
+      subscribedAt: new Date()
+    });
+
+    const snap = await getDocs(collection(db, "intramurals"));
+
+    for (const d of snap.docs) {
+      const g = d.data() as Intramural;
+
+      if (
+        (g.team1Id === teamId || g.team2Id === teamId) &&
+        g.sport === game.sport &&
+        g.tourney === game.tourney
+      ) {
+
+        batch.set(doc(db, "users", user.uid, "subscriptions", g.id), {
+          type: "game",
+          ...g
+        });
+      }
+    }
+
+    await batch.commit();
+
+    if (teamName === game.team1) setTeam1Sub(true);
+    if (teamName === game.team2) setTeam2Sub(true);
+
+    const month =
+      new Date().getFullYear() +
+      "-" +
+      String(new Date().getMonth() + 1).padStart(2, "0");
+
+    await copyCalendar(user.uid, month);
+
+    alert(`Subscribed to ${teamName}`);
+    
+  };
+
+  const unsubscribeFromTeam = async (teamName: string) => {
+      if (!user) return;
+
+      const teamId = getTeamId(teamName).replace(/\s+/g, "-");
+      console.log("Team ID for unsubscription:", teamId);
+      const batch = writeBatch(db);
+
+      batch.delete(doc(db, "users", user.uid, "subscriptions", teamId));
+
+      const snap = await getDocs(collection(db, "users", user.uid, "calendarCache"));
+
+      for (const d of snap.docs) {
+        const g = d.data() as Intramural;
+
+        if (
+          data.type === "game" &&
+          (g.team1 === teamName || g.team2 === teamName) &&
+          g.sport === game?.sport &&
+          g.tourney === game?.tourney
+        ) {
+          batch.delete(d.ref);
+        }
+      }
+
+      await batch.commit();
+
+      if (teamName === game.team1) { setTeam1Sub(false); }
+      if (teamName === game.team2) { setTeam2Sub(false); }
+
+      const month = 
+        new Date().getFullYear() +
+        "-" +
+        String(new Date().getMonth() + 1).padStart(2, "0");
+
+      await copyCalendar(user.uid, month);
+
+      alert(`Unsubscribed from ${teamName}`);
   };
 
   return (
