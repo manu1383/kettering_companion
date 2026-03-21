@@ -41,11 +41,11 @@ export default function CreateClubScreen() {
       return;
     }
 
-    const clubId = values.name.toLowerCase().replace(/\s+/g, "-");
+    const id = values.name.toLowerCase().replace(/\s+/g, "-");
 
     const updatedClub = {
       ...values,
-      id: clubId,
+      id: id,
       schedule: [
         {
           ...time,
@@ -64,7 +64,7 @@ export default function CreateClubScreen() {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
       if (userDoc) {
-        await ClubService.addOfficer(clubId, userDoc.id);
+        await ClubService.addOfficer(id, userDoc.id);
       }
     }
 

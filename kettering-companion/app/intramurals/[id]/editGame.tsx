@@ -1,14 +1,14 @@
-import ClubForm from "@/components/ClubForm";
+import IntramuralForm from "@/components/IntramuralForm";
 import { parseTime, to12Hour } from "@/lib/time";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  View
+    View
 } from "react-native";
 import { db } from "../../../lib/firebase";
-import { EventService } from "../../../services/eventService";
-import { Event } from "../../../types/subscription";
+import { IMService } from "../../../services/imService";
+import { Intramural } from "../../../types/subscription";
 
 
 export default function EditEventScreen() {
@@ -16,15 +16,15 @@ export default function EditEventScreen() {
   const router = useRouter();
 
   const [timeError, setTimeError] = useState<string | null>(null);
-  const [values, setValues] = useState<Event | null>(null);
+  const [values, setValues] = useState<Intramural | null>(null);
 
   useEffect(() => {
-    const loadEvent = async () => {
-      const event = await EventService.getEvent(id as string);
-      if (event && event.schedule?.length) {
-        const time = event.schedule?.[0];
+    const loadGame = async () => {
+      const game = await IMService.getGame(id as string);
+      if (game && game.schedule?.length) {
+        const time = game.schedule?.[0];
         setValues({
-          ...event,
+          ...game,
           schedule: [
             {
               ...time,
@@ -35,10 +35,10 @@ export default function EditEventScreen() {
         });
       }
     };
-    loadEvent();
+    loadGame();
   }, [id]);
 
-  const handleUpdateEvent = async () => {
+  const handleUpdateGame = async () => {
     if (!values) return;
     const time = values.schedule[0];
     const parsedStart = parseTime(time.startTime);
@@ -48,7 +48,7 @@ export default function EditEventScreen() {
       return;
     }
     if(!values.id) return
-    const updatedEvent = {
+    const updatedGame = {
       ...values,
       schedule: [
         {
@@ -58,28 +58,28 @@ export default function EditEventScreen() {
         }
       ]
     };
-    await EventService.updateEvent(values.id, updatedEvent);
-    await EventService.regenerateMeetings(updatedEvent);
+    await IMService.updateGame(values.id, updatedGame);
+    await IMService.regenerateMeetings(updatedGame);
 
-    router.push("/(tabs)/events");
+    router.push("/(tabs)/fitness");
   };
 
-  const handleDeleteEvent = async () => {
-    const eventId = id as string;
+  const handleDeleteGame = async () => {
+    const gameId = id as string;
 
-    // delete event
-    await deleteDoc(doc(db, "events", eventId));
+    // delete game
+    await deleteDoc(doc(db, "intramurals", gameId));
 
     // delete generated meetings
-    const snapshot = await getDocs(collection(db, "meetings"));
+    const snapshot = await getDocs(collection(db, "intramurals"));
 
-    for (const meeting of snapshot.docs) {
-      if (meeting.data().id === eventId) {
-        await deleteDoc(meeting.ref);
+    for (const game of snapshot.docs) {
+      if (game.data().id === gameId) {
+        await deleteDoc(game.ref);
       }
     }
 
-    router.replace("/(tabs)/events");
+    router.replace("/(tabs)/fitness");
   };
 
   if(!values) return null;
@@ -87,14 +87,13 @@ export default function EditEventScreen() {
   return (
     <View style={{ flex: 1 }}>
     
-      <ClubForm
+      <IntramuralForm
         values={values}
-        setValues={setValues as React.Dispatch<React.SetStateAction<Event>>}
-        onSubmit={handleUpdateEvent}
-        submitLabel="Update Event"
+        setValues={setValues as React.Dispatch<React.SetStateAction<Intramural>>}
+        onSubmit={handleUpdateGame}
+        submitLabel="Update Game"
         timeError={timeError}
-        onDelete={handleDeleteEvent}
-        isEvent={true}
+        onDelete={handleDeleteGame}
       />
 
     </View>

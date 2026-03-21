@@ -13,6 +13,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from "react-native";
+import { requestNotificationPermissions, scheduleEventNotification } from "@/services/notifications";
 import { MiniMap } from "./maps/MiniMap";
 import { useTheme } from "../../constants/theme";
 
@@ -115,6 +116,11 @@ export default function DaySchedule() {
         .filter(Boolean);
 
       setEvents(parsedEvents);
+
+      const granted = await requestNotificationPermissions();
+      if (granted) {
+        parsedEvents.forEach(scheduleEventNotification);
+      }
 
     } catch (error) {
       console.error("Calendar import failed:", error);

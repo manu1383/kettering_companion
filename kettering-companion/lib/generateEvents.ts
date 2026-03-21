@@ -8,6 +8,8 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
     endTime: string;
   }[] = [];
 
+  console.log("Incoming schedule:", schedule);
+
   for (const rule of schedule) {
 
     console.log("Generator received:", rule);
@@ -18,8 +20,8 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
     const [sy, sm, sd] = rule.startDate.split("-").map(Number);
     const start = new Date(sy, sm - 1, sd);
 
-    // SINGLE EVENT
-    if (rule.frequency === "never") {
+    // ✅ Treat missing frequency as a single event
+    if (!rule.frequency || rule.frequency === "never") {
       meetings.push({
         date: start,
         startTime: rule.startTime,
@@ -28,18 +30,16 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
       continue;
     }
 
-    // CLUBS REQUIRE END DATE
-    if (!rule.endDate) continue;
-
-    const [ey, em, ed] = rule.endDate.split("-").map(Number);
-    const end = new Date(ey, em - 1, ed);
+    let end: Date;
+    if (!rule.endDate) {
+      // default: 3 months after start
+      end = new Date(start);
+    } else {
+      const [ey, em, ed] = rule.endDate.split("-").map(Number);
+      end = new Date(ey, em - 1, ed);
+    }
 
     let current = new Date(start);
-    const weekday = Number(rule.weekday);
-
-    while (current.getDay() !== weekday) {
-      current.setDate(current.getDate() + 1);
-    }
 
     const increment =
       rule.frequency === "weekly" ? 7 :
@@ -51,7 +51,7 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
       meetings.push({
         date: new Date(current),
         startTime: rule.startTime,
-        endTime: rule.endTime
+        endTime: rule.endTime,
       });
 
       current.setDate(current.getDate() + increment);

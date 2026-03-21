@@ -15,40 +15,42 @@ export default function ClubsScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    const { user, role } = useContext(AuthContext);
+    const { user, role, subscribedClubs } = useContext(AuthContext);
+    const [showingSubscribed, setShowingSubscribed] = useState(false);
+    const [subscriptions, setSubscriptions] = useState<string[]>([]);
 
     useFocusEffect(
         useCallback(() => {
             const fetchClubs = async () => {
-                const data = await ClubService.getAllClubs();
-                data.sort((a, b) => a.name.localeCompare(b.name));
-                setClubs(data);
+                const [clubsData, userSubscriptions] = await Promise.all([
+                    ClubService.getAllClubs(),
+                    ClubService.getUserSubscribedClubs(user?.uid ?? "")
+                ]);
+                setClubs(clubsData);
+                setSubscriptions(userSubscriptions);
                 setLoading(false);
             };
             fetchClubs();
         }, [])
     );
 
-    const filteredClubs = clubs.filter((club) =>
-        club.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredClubs = clubs.filter((club) => {
+        const matchesSearch = club.name.toLowerCase().includes(search.toLowerCase());
+        
+        const isSubscribed = subscriptions.includes(club.id ?? "");
+        if (showingSubscribed) {
+            return matchesSearch && isSubscribed;
+        }
+        return matchesSearch;
+    });
 
-  const renderClub = ({ item }: { item: Club }) => {
-        const scheduleText = item.schedule
-            ?.map((m) => {
-                if (
-                    m.weekday === undefined ||
-                    m.frequency === undefined ||
-                    !m.startTime ||
-                    !m.endTime
-                ) {
-                    return null;
-                }
-
-                return `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
-            })
-            .filter((text): text is string => text !== null)
-            .join(" • ");
+    const renderClub = ({ item }: { item: Club }) => {
+        const scheduleText =
+            item.schedule
+                ?.map((m) => `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
+        
+        const isOfficer =
+            item.officers?.includes(user?.uid ?? "");
 
         const isOfficer = item.officers?.includes(user?.uid ?? "");
         const canManage = role === "admin" || isOfficer;
@@ -134,7 +136,16 @@ export default function ClubsScreen() {
                 ]}
                 placeholderTextColor="#888"
             />
-
+            <View style={styles.filterContainer}>
+                <TouchableOpacity
+                    style={[styles.filterButton, showingSubscribed && styles.activeFilter]}
+                    onPress={() => setShowingSubscribed(!showingSubscribed)}
+                >
+                    <Text style={styles.filterButtonText}>
+                        {showingSubscribed ? "Show All" : "Show Subscribed"}
+                    </Text>
+                </TouchableOpacity>
+            </View>
             {role === "admin" && (
                 <TouchableOpacity
                     style={[
@@ -162,7 +173,7 @@ export default function ClubsScreen() {
             />
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -221,5 +232,36 @@ const styles = StyleSheet.create({
     }, 
     schedule: {
         fontWeight: "600",
-    }
+    },
+    subscribeButton: {
+        backgroundColor: "#4BA3C7",
+        paddingVertical: 12,
+        borderRadius: 14,
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    subscribeButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    filterContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+    gap: 10,
+    },
+    filterButton: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: "#ccc",
+        alignItems: "center",
+    },
+    activeFilter: {
+        backgroundColor: "#4BA3C7",
+    },
+    filterButtonText: {
+        color: "#fff",
+        fontWeight: "600",
+    },
 });

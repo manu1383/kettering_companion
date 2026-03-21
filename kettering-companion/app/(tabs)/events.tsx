@@ -33,23 +33,12 @@ export default function EventsScreen() {
         event.name.toLowerCase().includes(search.toLowerCase())
     );
 
-   const renderEvent = ({ item }: { item: Event }) => {
-        const scheduleText = item.schedule
-            ?.map((m) => {
-                if (
-                    m.weekday === undefined ||
-                    !m.startDate ||
-                    !m.startTime ||
-                    !m.endTime
-                ) {
-                    return null;
-                }
-
-                return `${getWeekdayName(m.weekday)}, ${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
-            })
-            .filter((text): text is string => text !== null)
-            .join(" • ");
-
+    const renderEvent = ({ item }: { item: Event }) => {
+        const scheduleText =
+            item.schedule
+                ?.map((m) => `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
+            
+        
         const canManage = role === "admin";
 
         return (

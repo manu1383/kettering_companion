@@ -73,6 +73,7 @@ export function formatDate(dateString: string) {
   const date = new Date(y, m - 1, d);
 
   return date.toLocaleDateString("en-US", {
+    weekday: "long",
     month: "long",
     day: "numeric",
     year: "numeric"

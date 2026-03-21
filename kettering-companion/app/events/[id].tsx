@@ -82,8 +82,8 @@ export default function EventDetailScreen() {
     const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
 
     await setDoc(subRef, {
-      clubId: event.id,
-      clubName: event.name,
+      id: event.id,
+      name: event.name,
       subscribedAt: new Date()
     });
 
@@ -94,6 +94,7 @@ export default function EventDetailScreen() {
       String(new Date().getMonth() + 1).padStart(2, "0");
     
     await copyCalendar(user.uid, month);
+    alert("Meeting added to calendar!");
   };
 
   const handleUnsubscribe = async () => {
@@ -116,7 +117,7 @@ export default function EventDetailScreen() {
 
     await copyCalendar(uid, month);
     
-    alert("Unsubscribed and meetings removed!");
+    alert("Meeting removed from calendar!");
   };
 
   return (
@@ -132,7 +133,7 @@ export default function EventDetailScreen() {
           <Text style={styles.sectionTitle}>Event Time: </Text>
           {event.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
-              {getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+              {m.weekday !== undefined && getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
             </Text>
           ))}
         </>
