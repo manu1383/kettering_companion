@@ -48,7 +48,7 @@ export default function ClubsScreen() {
                 .map((d) => getPluralWeekday(d))
                 .join(", ");
 
-            return `${days} • ${formatFrequency(m.frequency ?? "")} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+            return `${days} • Repeats ${formatFrequency(m.frequency ?? "")} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
         });
         
         const isOfficer =

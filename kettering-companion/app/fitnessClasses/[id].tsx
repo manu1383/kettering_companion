@@ -1,5 +1,5 @@
 import { db } from "@/lib/firebase";
-import { formatDate, formatFrequency, getWeekdayName, to12Hour } from "@/lib/time";
+import { formatFrequency, getWeekdayName, to12Hour } from "@/lib/time";
 import { useLocalSearchParams } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
@@ -17,7 +17,7 @@ import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/subscription";
 /* =============================    Component ============================= */
-export default function ClubDetailScreen() {
+export default function FitnessClassDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
 
@@ -54,13 +54,13 @@ export default function ClubDetailScreen() {
   };
 
   useEffect(() => {
-    const fetchClub = async () => {
+    const fetchClass = async () => {
       try {
         if (!id || !user) return;
 
-        const clubData = await ClubService.getClub(id as string);
+        const clubData = await ClubService.getFitnessClass(id as string);
         if (!clubData) {
-          setError("Club not found.");
+          setError("Class not found.");
           setLoading(false);
           return;
         }
@@ -78,13 +78,13 @@ export default function ClubDetailScreen() {
         setIsSubscribed(subDoc.exists());
       } catch (err) {
         console.error(err);
-        setError("Failed to load club.");
+        setError("Failed to load class.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchClub();
+    fetchClass();
   }, [id, user]);
 
   if (loading) {
@@ -99,7 +99,7 @@ export default function ClubDetailScreen() {
     return (
       <View style={styles.centered}>
         <Text style={{ color: "red" }}>
-          {error ?? "Club not found."}
+          {error ?? "Class not found."}
         </Text>
       </View>
     );
@@ -120,18 +120,13 @@ export default function ClubDetailScreen() {
           daysArr.length > 1
             ? `${daysArr.slice(0, -1).join(", ")} & ${daysArr.slice(-1)}`
             : daysArr[0] || "";
+          
 
         return (
-          <View key={i} style={styles.scheduleContainer}>
-            <Text style={styles.dateText}>
-              {formatDate(m.startDate)} - {formatDate(m.endDate? m.endDate : m.startDate)}
-            </Text>
-
-            <Text style={styles.scheduleText}>
-              {days} • {"Repeats "}{formatFrequency(m.frequency ?? "")} •{" "}
-              {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
-            </Text>
-          </View>
+          <Text key={i} style={styles.schedule}>
+            {days} • {formatFrequency(m.frequency? m.frequency : "")} •{" "}
+            {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+          </Text>
         );
       })}
 
@@ -142,16 +137,9 @@ export default function ClubDetailScreen() {
         </>
       )}
 
-      {club.contactEmail && (
-        <>
-          <Text style={styles.sectionTitle}>Contact Email:</Text>
-          <Text style={styles.section}>{club.contactEmail}</Text>
-        </>
-      )}
-
       {officers.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Officers:</Text>
+          <Text style={styles.sectionTitle}>Instructor:</Text>
           {officers.map((officer, index) => (
             <View key={index} style={styles.officerCard}>
               <Text style={styles.officerName}>{officer.name}</Text>
@@ -254,20 +242,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
-  },
-  scheduleContainer: {
-    marginTop: 6,
-  },
-
-  dateText: {
-    fontSize: 13,
-    color: "#666",
-  },
-
-  scheduleText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#4BA3C7",
-    marginTop: 2,
   },
 });

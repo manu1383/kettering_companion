@@ -1,4 +1,5 @@
-﻿import { formatDate, to12Hour } from '@/lib/time';
+﻿import { formatDate, formatFrequency, getPluralWeekday, to12Hour } from '@/lib/time';
+import { ClubService } from '@/services/clubService';
 import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
@@ -6,7 +7,7 @@ import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AuthContext } from '../../context/AuthProvider';
 import { FitnessService } from '../../services/fitnessService';
-import { Intramural } from '../../types/subscription';
+import { Club, Intramural } from '../../types/subscription';
 
 export default function FitnessScreen() {
     const [view, setView] = useState<"fitness" | "intramurals">("intramurals");
@@ -14,6 +15,8 @@ export default function FitnessScreen() {
     const router = useRouter();
     const [games, setGames] = useState<Intramural[]>([]);
     const [filteredGames, setFilteredGames] = useState<Intramural[]>([]);
+    const [classes, setClasses] = useState<Club[]>([]);
+    const [filteredClasses, setFilteredClasses] = useState<Club[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,22 @@ export default function FitnessScreen() {
         setFilteredGames(filtered);
     }, [filters, games]);
 
+    useEffect(() => {
+        const fetchClasses = async () => {
+            const data = await ClubService.getAllFitnessClasses();
+            setClasses(data);
+            setFilteredClasses(data);
+        };
+        fetchClasses();
+    }, []);
+
+    useEffect(() => {
+        const filtered = classes.filter(c => 
+            c.name.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredClasses(filtered);
+    }, [search, classes]);
+
     const sports = [...new Set(games.map(g => g.sport))].filter(Boolean);
     const tourneys = [...new Set(games.map(g => g.tourney))].filter(Boolean);
     const teams = [...new Set(games.flatMap(g => [g.team1, g.team2]))].filter(Boolean);
@@ -113,6 +132,48 @@ export default function FitnessScreen() {
                     onPress={() =>
                         router.push({
                             pathname: "/intramurals/[id]/editGame",
+                            params: { id: item.id! },
+                        })
+                    }
+                >
+                    <Feather name="edit-2" size={20} color="#4BA3C7" />
+                </TouchableOpacity>
+            }
+        </TouchableOpacity>
+        );
+    };
+
+    const renderClass = ({ item }: { item: Club }) => {
+        const scheduleText = item.schedule?.map((m) => {
+            const days = (m.weekdays || [])
+                .map((d) => getPluralWeekday(d))
+                .join(", ");
+
+            return `${days} • ${formatFrequency(m.frequency ?? "")} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+        });
+
+        const canManage = role === "admin";
+        return (
+        <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+            router.push({
+                pathname: "/fitnessClasses/[id]",
+                params: { id: item.id! },
+            })
+            }
+        >
+            <Text style={styles.name}>{item.name}</Text>
+
+            <Text style={styles.schedule}>
+                {[scheduleText, item.location].filter(Boolean).join(" • ")}
+            </Text>
+            {canManage && 
+                <TouchableOpacity
+                    style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
+                    onPress={() =>
+                        router.push({
+                            pathname: "/fitnessClasses/[id]/editClass",
                             params: { id: item.id! },
                         })
                     }
@@ -184,80 +245,103 @@ export default function FitnessScreen() {
             </View>
 
             {view === "intramurals" ? (
-            <>
-            <TextInput
-                placeholder="Search intramurals..."
-                value={search}
-                onChangeText={setSearch}
-                style={styles.search}
-                placeholderTextColor="#888"
-            />
-            <View style={styles.pickerWrapper}>
-                <View style={styles.smallPicker}>
-                    <Picker
-                        selectedValue={filters.sport}
-                        onValueChange={(value) =>
-                        setFilters((prev) => ({ ...prev, sport: value }))
-                        }
-                    >
-                        <Picker.Item label="All Sports" value="" />
-                        {sports.map((s) => (
-                        <Picker.Item key={s} label={s} value={s} />
-                        ))}
-                    </Picker>
+            
+                <><TextInput
+                    placeholder="Search intramurals..."
+                    value={search}
+                    onChangeText={setSearch}
+                    style={styles.search}
+                    placeholderTextColor="#888"
+                />
+                <View style={styles.pickerWrapper}>
+                    <View style={styles.smallPicker}>
+                        <Picker
+                            selectedValue={filters.sport}
+                            onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, sport: value }))
+                            }
+                        >
+                            <Picker.Item label="All Sports" value="" />
+                            {sports.map((s) => (
+                            <Picker.Item key={s} label={s} value={s} />
+                            ))}
+                        </Picker>
+                    </View>
+
+                    <View style={styles.smallPicker}>
+                        <Picker
+                            selectedValue={filters.tourney}
+                            onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, tourney: value }))
+                            }
+                        >
+                            <Picker.Item label="All Tourneys" value="" />
+                            {tourneys.map((t) => (
+                            <Picker.Item key={t} label={t} value={t} />
+                            ))}
+                        </Picker>
+                    </View>
+
+                    <View style={styles.smallPicker}>
+                        <Picker
+                            selectedValue={filters.team}
+                            onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, team: value }))
+                            }
+                        >
+                            <Picker.Item label="All Teams" value="" />
+                            {teams.map((t) => (
+                            <Picker.Item key={t} label={t} value={t} />
+                            ))}
+                        </Picker>
+                    </View>
                 </View>
 
-                <View style={styles.smallPicker}>
-                    <Picker
-                        selectedValue={filters.tourney}
-                        onValueChange={(value) =>
-                        setFilters((prev) => ({ ...prev, tourney: value }))
-                        }
+                {role === "admin" && (
+                    <TouchableOpacity
+                        style={styles.createButton}
+                        onPress={() => router.push("/admin/createIntramural")}
                     >
-                        <Picker.Item label="All Tourneys" value="" />
-                        {tourneys.map((t) => (
-                        <Picker.Item key={t} label={t} value={t} />
-                        ))}
-                    </Picker>
-                </View>
+                        <Text style={styles.createButtonText}>+ Create Intramural</Text>
+                    </TouchableOpacity>
+                )}
 
-                <View style={styles.smallPicker}>
-                    <Picker
-                        selectedValue={filters.team}
-                        onValueChange={(value) =>
-                        setFilters((prev) => ({ ...prev, team: value }))
-                        }
-                    >
-                        <Picker.Item label="All Teams" value="" />
-                        {teams.map((t) => (
-                        <Picker.Item key={t} label={t} value={t} />
-                        ))}
-                    </Picker>
-                </View>
-            </View>
-
-            {role === "admin" && (
-                <TouchableOpacity
-                    style={styles.createButton}
-                    onPress={() => router.push("/admin/createIntramural")}
-                >
-                    <Text style={styles.createButtonText}>+ Create Intramural</Text>
-                </TouchableOpacity>
-            )}
-
-            <FlatList
-                data={filteredGames}
-                renderItem={renderGame}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                <Text style={styles.emptyText}>No intramurals found.</Text>
-                }
-            />
-            </> 
+                <FlatList
+                    data={filteredGames}
+                    renderItem={renderGame}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                    <Text style={styles.emptyText}>No intramurals found.</Text>
+                    }
+                /></> 
             ) : (
-                <View style={{marginTop: 40, alignItems: "center"}}>
-                    <Text style={{color: "#555", fontSize: 16}}>Fitness classes coming soon!</Text>
-                </View>
+                <><TextInput
+                    placeholder="Search fitness classes..."
+                    value={search}
+                    onChangeText={setSearch}
+                    style={styles.search}
+                    placeholderTextColor="#888"
+                />
+                {role === "admin" && (
+                    <TouchableOpacity
+                        style={styles.createButton}
+                        onPress={() => router.push("/admin/createFitnessClass")}
+                    >
+                        <Text style={styles.createButtonText}>+ Create Fitness Class</Text>
+                    </TouchableOpacity>
+                )}
+
+                <FlatList
+                    data={filteredClasses}
+                    renderItem={renderClass}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                    <Text style={styles.emptyText}>No fitness classes found.</Text>
+                    }
+                />
+                
+                
+                </>
             )}
         </View>
 
