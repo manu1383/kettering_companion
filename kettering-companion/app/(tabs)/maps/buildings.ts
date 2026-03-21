@@ -353,6 +353,7 @@ export const BUILDINGS: BuildingsType = {
 
     CC: {
         name: "Campus Center",
+        campusLocation: { x: 0.5412, y: 0.5584 },
         floors: [
             {
                 level: 1,

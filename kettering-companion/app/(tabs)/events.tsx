@@ -1,4 +1,4 @@
-﻿import { formatDate, getWeekdayName, to12Hour } from '@/lib/time';
+﻿import { formatDate, getWeekdayName, to12Hour } from '../../lib/time';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
@@ -6,8 +6,10 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpac
 import { AuthContext } from '../../context/AuthProvider';
 import { EventService } from '../../services/eventService';
 import { Event } from '../../types/subscription';
+import { useTheme } from "../../constants/theme";
 
 export default function EventsScreen() {
+    const colors = useTheme();
     const [events, setEvents] = useState<Event[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -31,93 +33,130 @@ export default function EventsScreen() {
         event.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    const renderEvent = ({ item }: { item: Event }) => {
-        const scheduleText =
-            item.schedule
-                ?.map((m) => `${getWeekdayName(m.weekday)}, ${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
-            
-        
-        const canManage = role === "admin";
-        return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-            router.push({
-                pathname: "/events/[id]",
-                params: { id: item.id! },
-            })
-            }
-        >
-            <Text style={styles.name}>{item.name}</Text>
+   const renderEvent = ({ item }: { item: Event }) => {
+        const scheduleText = item.schedule
+            ?.map((m) => {
+                if (
+                    m.weekday === undefined ||
+                    !m.startDate ||
+                    !m.startTime ||
+                    !m.endTime
+                ) {
+                    return null;
+                }
 
-            {item.description && (
-            <Text style={styles.description} numberOfLines={2}>
-                {item.description}
-            </Text>
-            )}
-            <Text style={styles.schedule}>
-                {[scheduleText, item.location].filter(Boolean).join(" • ")}
-            </Text>
-            {canManage && 
-                <TouchableOpacity
-                    style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
-                    onPress={() =>
-                        router.push({
-                            pathname: "/events/[id]/editEvent",
-                            params: { id: item.id! },
-                        })
-                    }
-                >
-                    <Feather name="edit-2" size={20} color="#4BA3C7" />
-                </TouchableOpacity>
-            }
-        </TouchableOpacity>
+                return `${getWeekdayName(m.weekday)}, ${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+            })
+            .filter((text): text is string => text !== null)
+            .join(" • ");
+
+        const canManage = role === "admin";
+
+        return (
+            <TouchableOpacity
+                style={[styles.card, { backgroundColor: colors.card }]}
+                onPress={() =>
+                    router.push({
+                        pathname: "/events/[id]",
+                        params: { id: item.id! },
+                    })
+                }
+            >
+                <Text style={[styles.name, { color: colors.text }]}>
+                    {item.name}
+                </Text>
+
+                {item.description && (
+                    <Text
+                        style={[styles.description, { color: colors.text }]}
+                        numberOfLines={2}
+                    >
+                        {item.description}
+                    </Text>
+                )}
+
+                <Text style={[styles.schedule, { color: colors.accent }]}>
+                    {[scheduleText, item.location].filter(Boolean).join(" • ")}
+                </Text>
+
+                {canManage && (
+                    <TouchableOpacity
+                        style={{
+                            position: "absolute",
+                            right: 12,
+                            top: "50%",
+                            transform: [{ translateY: -10 }],
+                        }}
+                        onPress={() =>
+                            router.push({
+                                pathname: "/events/[id]/editEvent",
+                                params: { id: item.id! },
+                            })
+                        }
+                    >
+                        <Feather name="edit-2" size={20} color={colors.accent} />
+                    </TouchableOpacity>
+                )}
+            </TouchableOpacity>
         );
     };
 
     if (loading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#4BA3C7" />
+            <View style={[styles.centered, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.accent} />
             </View>
         );
     }
 
     if (error) {
         return (
-            <View style={styles.centered}>
-                <Text style={{color: "red"}}>{error}</Text>
+            <View style={[styles.centered, { backgroundColor: colors.background }]}>
+                <Text style={{ color: "red" }}>{error}</Text>
             </View>
         );
     }
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Events</Text>
+   return (
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.header, { color: colors.text }]}>
+                Events
+            </Text>
 
             <TextInput
                 placeholder="Search events..."
                 value={search}
                 onChangeText={setSearch}
-                style={styles.search}
+                style={[
+                    styles.search,
+                    { backgroundColor: colors.card, color: colors.text }
+                ]}
                 placeholderTextColor="#888"
             />
 
             {role === "admin" && (
                 <TouchableOpacity
-                    style={styles.createButton}
+                    style={[
+                        styles.createButton,
+                        { backgroundColor: colors.accent }
+                    ]}
                     onPress={() => router.push("/admin/createEvent")}
                 >
-                    <Text style={styles.createButtonText}>+ Create Event</Text>
+                    <Text style={styles.createButtonText}>
+                        + Create Event
+                    </Text>
                 </TouchableOpacity>
             )}
+
             <FlatList
                 data={filteredEvents}
                 keyExtractor={(item) => item.id!}
                 renderItem={renderEvent}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                <Text style={styles.emptyText}>No events found.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text }]}>
+                        No events found.
+                    </Text>
                 }
             />
         </View>

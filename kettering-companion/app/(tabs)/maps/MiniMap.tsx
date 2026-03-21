@@ -30,21 +30,28 @@ export function MiniMap({ room }: MiniMapProps) {
             />
 
             {layout.displayWidth > 0 && (
-                <View
-                    style={{
-                        position: "absolute",
-                        left:
-                            layout.offsetX +
-                            roomData.x * layout.displayWidth - 6,
-                        top:
-                            layout.offsetY +
-                            roomData.y * layout.displayHeight - 6,
-                        width: 12,
-                        height: 12,
-                        borderRadius: 6,
-                        backgroundColor: "red",
-                    }}
-                />
+                (() => {
+                    const normalizedX = roomData.x / floor.imageWidth;
+                    const normalizedY = 1 - (roomData.y / floor.imageHeight);
+
+                    return (
+                        <View
+                            style={{
+                                position: "absolute",
+                                left:
+                                    layout.offsetX +
+                                    normalizedX * layout.displayWidth - 6,
+                                top:
+                                    layout.offsetY +
+                                    normalizedY * layout.displayHeight - 6,
+                                width: 12,
+                                height: 12,
+                                borderRadius: 6,
+                                backgroundColor: "red",
+                            }}
+                        />
+                    );
+                })()
             )}
         </View>
     );

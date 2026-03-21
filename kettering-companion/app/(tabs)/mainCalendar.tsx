@@ -14,11 +14,12 @@ import {
   View
 } from "react-native";
 import { MiniMap } from "./maps/MiniMap";
+import { useTheme } from "../../constants/theme";
 
 
 WebBrowser.maybeCompleteAuthSession();
 
-const router = useRouter();
+
 const HOUR_HEIGHT = 60;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 type CalendarEvent = {
@@ -31,6 +32,7 @@ type CalendarEvent = {
     room?: string;
 };
 export default function DaySchedule() {
+  const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [infoVisible, setInfoVisible] = useState(false);
@@ -40,70 +42,53 @@ export default function DaySchedule() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { user } = useContext(AuthContext);
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
+  
 
-  const colorScheme = useColorScheme();
-  const isLight = colorScheme === "light";
-  const isDark = colorScheme === "dark";
-  const textColor = isDark ? "#fff" : "#000";
+  const colors = useTheme();
+  const textColor = colors.text;
 
   const normalizeGoogleEvent = (event: any): CalendarEvent | null => {
-      let startDate: Date;
-      let endDate: Date;
-      let isAllDay = false;
+        let startDate: Date;
+        let endDate: Date;
+        let isAllDay = false;
 
-    // Google event
-    if (event.start?.dateTime && event.end?.dateTime) {
-      startDate = new Date(event.start.dateTime);
-      endDate = new Date(event.end.dateTime);
-    }
+        if (event.start?.dateTime && event.end?.dateTime) {
+            startDate = new Date(event.start.dateTime);
+            endDate = new Date(event.end.dateTime);
+        } 
+        else if (event.start?.date && event.end?.date) {
+            startDate = new Date(event.start.date);
+            endDate = new Date(event.end.date);
+            isAllDay = true;
+        } 
+        else if (event.date && event.startTime && event.endTime) {
+            startDate = new Date(`${event.date}T${event.startTime}`);
+            endDate = new Date(`${event.date}T${event.endTime}`);
+        } 
+        else {
+            return null;
+        }
 
-    // Google all-day event
-    else if (event.start?.date && event.end?.date) {
-      startDate = new Date(event.start.date);
-      endDate = new Date(event.end.date);
-      isAllDay = true;
-    }
+        const title = event.summary || "Untitled Event";
+        const room = event.location || undefined;
+        const lower = title.toLowerCase();
 
-    // Club meeting event
-    else if (event.date && event.startTime && event.endTime) {
-      startDate = new Date(`${event.date}T${event.startTime}`);
-      endDate = new Date(`${event.date}T${event.endTime}`);
-    }
+        let type: CalendarEvent["type"] = "School";
 
-    else {
-      return null;
-    }
+        if (lower.includes("gym")) type = "Fitness";
+        else if (lower.includes("club")) type = "Club";
+        else if (lower.includes("event")) type = "SchoolEvent";
 
-    return {
-      id: event.id || `${event.clubId}-${event.date}`,
-      title: event.summary || `${event.clubName} Meeting`,
-      startDate,
-      endDate,
-      allDay: isAllDay,
+        return {
+            id: event.id || `${event.clubId}-${event.date}`,
+            title,
+            startDate,
+            endDate,
+            allDay: isAllDay,
+            type,
+            room,
+        };
     };
-      const title = event.summary || "Untitled Event";
-      const room = event.location || undefined;
-      const lower = title.toLowerCase();
-
-      let type: CalendarEvent["type"] = "School";
-
-  if (lower.includes("gym"))
-      type = "Fitness";
-  else if (lower.includes("club"))
-      type = "Club";
-  else if (lower.includes("event"))
-      type = "SchoolEvent";
-
-      return {
-          id: event.id,
-          title,
-          startDate,
-          endDate,
-          allDay: isAllDay,
-          type,
-          room,
-      };
-  };
 
   async function handleImport() {
     try {
@@ -485,10 +470,10 @@ export default function DaySchedule() {
     };
 
   return (
-    <View style={[styles.container, { backgroundColor: isLight ? '#FFFFFF' : '#121212' }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
        <View style={styles.headerRow}>
          <TouchableOpacity onPress={goToPrevious}>
-                <Text style={[styles.arrow, { color: isLight ? '#000' : '#FFF' }]}>◀</Text>
+                <Text style={[styles.arrow, { color: colors.text }]}>◀</Text>
          </TouchableOpacity>
          <View style={{ flexDirection: "row", gap: 8 }}>
                <TouchableOpacity onPress={() => setViewMode("day")}>
@@ -504,18 +489,18 @@ export default function DaySchedule() {
                </TouchableOpacity>
            </View>
       
-         <Text style={[styles.dateHeader, { color: isLight ? '#000' : '#FFF' }]}>
+         <Text style={[styles.dateHeader, { color: colors.text}]}>
                {headerText}
            </Text>
 
          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {/* Help button with (i) icon */}
             <TouchableOpacity onPress={() => setInfoVisible(true)} style={styles.iconPadding}>
-                <Text style={{ fontSize: 22, color: isLight ? '#007AFF' : '#0A84FF' }}>ⓘ</Text>
+                <Text style={{ fontSize: 22, color: colors.text}}>ⓘ</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={goToNext}>
-                <Text style={[styles.arrow, { color: isLight ? '#000' : '#FFF' }]}>▶</Text>
+                <Text style={[styles.arrow, { color: colors.text}]}>▶</Text>
             </TouchableOpacity>
          </View>
        </View>
@@ -568,7 +553,7 @@ export default function DaySchedule() {
                                 key={hour}
                                 style={{ height: HOUR_HEIGHT }}
                             >
-                                <Text style={styles.hourLabel}>
+                                <Text style={[styles.hourLabel, { color: colors.text }]}>
                                     {hour === 12
                                         ? "12 PM"
                                         : hour > 12
@@ -594,7 +579,7 @@ export default function DaySchedule() {
                                     left: 0,
                                     right: 0,
                                     height: 1,
-                                    backgroundColor: "#ddd",
+                                    backgroundColor: colors.border
                                 }}
                             />
                         ))}
@@ -668,14 +653,14 @@ export default function DaySchedule() {
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={[
-                styles.modalContent,
-                isLight && { backgroundColor: "#ffffff" }
-              ]}>
-                <Text style={[styles.modalTitle]}>
+                    styles.modalContent,
+                    { backgroundColor: colors.modalBackground }
+                ]}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
                   About This Calendar
                 </Text>
 
-                <Text style={[styles.modalText]}>
+                <Text style={[styles.modalText, { color: colors.text }]}>
                   Share your Google Calendar with
                   537697026527-compute@developer.gserviceaccount.com
                   to allow event syncing.
@@ -704,25 +689,36 @@ export default function DaySchedule() {
             onRequestClose={() => setSelectedEvent(null)}
         >
         <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[
+                styles.modalContent,
+                { backgroundColor: colors.modalBackground }
+            ]}>
                 {selectedEvent && (
                     <>
-                        <Text style={styles.modalTitle}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>
                             {selectedEvent.title}
                         </Text>
 
                         {selectedEvent && (
                             <ScrollView showsVerticalScrollIndicator={false}>
                             <>
-                                <Text>Room: {selectedEvent.room}</Text>
+                                <Text style={{ color: colors.text }}>
+                                    Room: {selectedEvent.room}
+                                </Text>
 
                                 {selectedEvent.room && (
-                                    <View style={{ marginVertical: 16 }}>
+                                    <View style={{
+                                            marginVertical: 16,
+                                            backgroundColor: colors.card,
+                                            padding: 10,
+                                            borderRadius: 10
+                                        }}>
                                         <Text
                                             style={{
                                                 fontWeight: "600",
                                                 fontSize: 16,
                                                 marginBottom: 8,
+                                                color: colors.text
                                             }}
                                         >
                                             Location Preview
@@ -749,7 +745,7 @@ export default function DaySchedule() {
                             </ScrollView>
                         )}
 
-                        <Text>
+                        <Text style={{ color: colors.text }}>
                             {new Date(selectedEvent.startDate).toLocaleTimeString()} - 
                             {new Date(selectedEvent.endDate).toLocaleTimeString()}
                         </Text>
@@ -841,12 +837,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-    width: "90%",
-    maxHeight: "80%", 
-  },
+        borderRadius: 16,
+        padding: 20,
+        width: "90%",
+        maxHeight: "80%",
+        elevation: 10, //Android
+        shadowColor: "#000", //iOS
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+    },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",

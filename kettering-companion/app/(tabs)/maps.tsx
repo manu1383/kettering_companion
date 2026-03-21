@@ -3,9 +3,7 @@
     Text,
     StyleSheet,
     Pressable,
-    useColorScheme,
 } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
@@ -13,6 +11,7 @@ import { useLocalSearchParams } from "expo-router";
 import { BUILDINGS, ROOM_INDEX, validateRoom } from "./maps/buildings";
 import { useContainedImageLayout } from "./maps/useContainedImageLayout";
 import ZoomableImage from "./maps/ZoomableImage";
+import { useTheme } from "../../constants/theme";
 
 type Layout = ReturnType<typeof useContainedImageLayout>;
 
@@ -20,13 +19,13 @@ export default function MapScreen() {
     const generalKUMap = require("../../assets/images/KU_Updated_parking_Map_JAN2024-2.jpg");
 
     const insets = useSafeAreaInsets();
-    const isDark = useColorScheme() === "dark";
+    const colors = useTheme();
 
     const theme = {
-        arrow: isDark ? "#FFD700" : "#1E3A8A",
-        arrowBg: isDark ? "#333" : "#E5E7EB",
-        backBg: isDark ? "#222" : "#FFF",
-        backText: isDark ? "#FFF" : "#1E3A8A",
+        arrow: colors.tabIconSelected,
+        arrowBg: colors.card,
+        backBg: colors.card,
+        backText: colors.text,
     };
 
     const params = useLocalSearchParams();
