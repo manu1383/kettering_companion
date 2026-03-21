@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, Platform } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Switch,
+    TouchableOpacity,
+    Platform,
+} from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { requestNotificationPermissions } from '../../services/notifications';
+import { useTheme } from '../../constants/theme';
 
 export default function NotificationsScreen() {
+    const colors = useTheme();
     const [scheduled, setScheduled] = useState<any[]>([]);
     const [enabled, setEnabled] = useState(true);
 
@@ -18,25 +27,25 @@ export default function NotificationsScreen() {
     };
 
     const sendTestNotification = async () => {
-    if (Platform.OS === 'web') {
-        new Notification("Test Notification", {
-            body: "This is a test notification",
-        });
-        return;
-    }
+        if (Platform.OS === 'web') {
+            new Notification('Test Notification', {
+                body: 'This is a test notification',
+            });
+            return;
+        }
 
-    await Notifications.scheduleNotificationAsync({
-        content: {
-            title: "Test Notification",
-            body: "This is a test notification",
-        },
-        trigger: { 
-            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-            seconds: 5 
-        },
-    });
-};
-    
+        await Notifications.scheduleNotificationAsync({
+            content: {
+                title: 'Test Notification',
+                body: 'This is a test notification',
+            },
+            trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                seconds: 5,
+            },
+        });
+    };
+
     useEffect(() => {
         async function init() {
             const granted = await requestNotificationPermissions();
@@ -71,16 +80,20 @@ export default function NotificationsScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Notifications</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.header, { color: colors.text }]}>
+                Notifications
+            </Text>
 
-            <View style={styles.row}>
-                <Text style={styles.label}>Enable Notifications</Text>
+            <View style={[styles.row, { backgroundColor: colors.card }]}>
+                <Text style={[styles.label, { color: colors.text }]}>
+                    Enable Notifications
+                </Text>
                 <Switch value={enabled} onValueChange={toggleNotifications} />
             </View>
-            
+
             <TouchableOpacity
-                style={styles.testButton}
+                style={[styles.testButton, { backgroundColor: colors.accent }]}
                 onPress={sendTestNotification}
             >
                 <Text style={styles.testButtonText}>
@@ -89,18 +102,23 @@ export default function NotificationsScreen() {
             </TouchableOpacity>
 
             {Platform.OS === 'web' ? (
-                <Text style={styles.message}>
+                <Text style={[styles.message, { color: colors.text }]}>
                     Notifications work while this tab is open.
                 </Text>
             ) : scheduled.length === 0 ? (
-                <Text style={styles.message}>No scheduled notifications.</Text>
+                <Text style={[styles.message, { color: colors.text }]}>
+                    No scheduled notifications.
+                </Text>
             ) : (
                 scheduled.map((n, i) => (
-                    <View key={i} style={styles.notificationItem}>
-                        <Text style={styles.title}>
+                    <View
+                        key={i}
+                        style={[styles.notificationItem, { backgroundColor: colors.card }]}
+                    >
+                        <Text style={[styles.title, { color: colors.text }]}>
                             {n.content.title}
                         </Text>
-                        <Text style={styles.body}>
+                        <Text style={[styles.body, { color: colors.text }]}>
                             {n.content.body}
                         </Text>
                     </View>
@@ -108,7 +126,7 @@ export default function NotificationsScreen() {
             )}
 
             <TouchableOpacity
-                style={styles.clearButton}
+                style={[styles.clearButton, { backgroundColor: colors.accent }]}
                 onPress={clearAllNotifications}
             >
                 <Text style={styles.clearButtonText}>
@@ -116,12 +134,9 @@ export default function NotificationsScreen() {
                 </Text>
             </TouchableOpacity>
 
-                <Text style={[styles.info, { color: colors.text }]}>
-                    You will receive notifications 30 minutes before each event.
-                </Text>
-
-            </View>
-
+            <Text style={[styles.info, { color: colors.text }]}>
+                You will receive notifications 30 minutes before each event.
+            </Text>
         </View>
     );
 }
@@ -131,9 +146,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: 60,
         paddingHorizontal: 20,
-        backgroundColor: '#E6F0FF',
     },
-
     header: {
         fontSize: 24,
         fontWeight: 'bold',
@@ -145,18 +158,18 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
+        padding: 12,
+        borderRadius: 10,
     },
     label: {
         fontSize: 18,
     },
     message: {
         fontSize: 16,
-        color: '#555',
         textAlign: 'center',
         marginTop: 20,
     },
     notificationItem: {
-        backgroundColor: '#fff',
         padding: 12,
         borderRadius: 8,
         marginBottom: 10,
@@ -168,11 +181,10 @@ const styles = StyleSheet.create({
     },
     body: {
         fontSize: 14,
-        color: '#555',
+        marginTop: 4,
     },
     clearButton: {
         marginTop: 20,
-        backgroundColor: '#007AFF',
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
@@ -181,15 +193,12 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
     },
-
     info: {
         marginTop: 20,
         fontSize: 14,
         textAlign: 'center',
-        color: '#444',
     },
-        testButton: {
-        backgroundColor: '#34C759',
+    testButton: {
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',

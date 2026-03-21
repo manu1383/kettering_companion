@@ -1,4 +1,4 @@
-﻿import { formatDate, to12Hour } from '@/lib/time';
+﻿import { formatDate, to12Hour } from '../../lib/time';
 import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
@@ -7,8 +7,10 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpac
 import { AuthContext } from '../../context/AuthProvider';
 import { IMService } from '../../services/imService';
 import { Intramural } from '../../types/subscription';
+import { useTheme } from "../../constants/theme";
 
 export default function FitnessScreen() {
+    const colors = useTheme();
     const { role } = useContext(AuthContext);
     const router = useRouter();
     const [games, setGames] = useState<Intramural[]>([]);
@@ -87,109 +89,128 @@ export default function FitnessScreen() {
     const renderGame = ({ item }: { item: Intramural }) => {
         const scheduleText =
             item.schedule
-                ?.map((m) => `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
-            
-        
-        const canManage = role === "admin";
-        return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-            router.push({
-                pathname: "/intramurals/[id]",
-                params: { id: item.id! },
-            })
-            }
-        >
-            <Text style={styles.name}>{item.name}</Text>
+                ?.map((m) => {
+                    if (!m.startDate || !m.startTime || !m.endTime) return null;
 
-            <Text style={styles.schedule}>
-                {[scheduleText, item.tourney + '-Tourney'].filter(Boolean).join(" • ")}
-            </Text>
-            {canManage && 
-                <TouchableOpacity
-                    style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
-                    onPress={() =>
-                        router.push({
-                            pathname: "/intramurals/[id]/editGame",
-                            params: { id: item.id! },
-                        })
-                    }
-                >
-                    <Feather name="edit-2" size={20} color="#4BA3C7" />
-                </TouchableOpacity>
-            }
-        </TouchableOpacity>
+                    return `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+                })
+                .filter((text): text is string => text !== null)
+                .join(" • ");
+
+        const canManage = role === "admin";
+
+        return (
+            <TouchableOpacity
+                style={[styles.card, { backgroundColor: colors.card }]}
+                onPress={() =>
+                    router.push({
+                        pathname: "/intramurals/[id]",
+                        params: { id: item.id! },
+                    })
+                }
+            >
+                <Text style={[styles.name, { color: colors.text }]}>
+                    {item.name}
+                </Text>
+
+                <Text style={[styles.schedule, { color: colors.accent }]}>
+                    {[scheduleText, item.tourney + "-Tourney"].filter(Boolean).join(" • ")}
+                </Text>
+
+                {canManage && (
+                    <TouchableOpacity
+                        style={{
+                            position: "absolute",
+                            right: 12,
+                            top: "50%",
+                            transform: [{ translateY: -10 }],
+                        }}
+                        onPress={() =>
+                            router.push({
+                                pathname: "/intramurals/[id]/editGame",
+                                params: { id: item.id! },
+                            })
+                        }
+                    >
+                        <Feather name="edit-2" size={20} color={colors.accent} />
+                    </TouchableOpacity>
+                )}
+            </TouchableOpacity>
         );
     };
 
     if (loading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#4BA3C7" />
+            <View style={[styles.centered, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.accent} />
             </View>
         );
     }
 
     if (error) {
         return (
-            <View style={styles.centered}>
-                <Text style={{color: "red"}}>{error}</Text>
+            <View style={[styles.centered, { backgroundColor: colors.background }]}>
+                <Text style={{ color: "red" }}>{error}</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-
-            <Text style={styles.header}>Intramurals</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.header, { color: colors.text }]}>
+                Intramurals
+            </Text>
 
             <TextInput
                 placeholder="Search intramurals..."
                 value={search}
                 onChangeText={setSearch}
-                style={styles.search}
+                style={[
+                    styles.search,
+                    { backgroundColor: colors.card, color: colors.text }
+                ]}
                 placeholderTextColor="#888"
             />
+
             <View style={styles.pickerWrapper}>
-                <View style={styles.smallPicker}>
+                <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
                     <Picker
                         selectedValue={filters.sport}
                         onValueChange={(value) =>
-                        setFilters((prev) => ({ ...prev, sport: value }))
+                            setFilters((prev) => ({ ...prev, sport: value }))
                         }
                     >
                         <Picker.Item label="All Sports" value="" />
                         {sports.map((s) => (
-                        <Picker.Item key={s} label={s} value={s} />
+                            <Picker.Item key={s} label={s} value={s} />
                         ))}
                     </Picker>
                 </View>
 
-                <View style={styles.smallPicker}>
+                <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
                     <Picker
                         selectedValue={filters.tourney}
                         onValueChange={(value) =>
-                        setFilters((prev) => ({ ...prev, tourney: value }))
+                            setFilters((prev) => ({ ...prev, tourney: value }))
                         }
                     >
                         <Picker.Item label="All Tourneys" value="" />
                         {tourneys.map((t) => (
-                        <Picker.Item key={t} label={t} value={t} />
+                            <Picker.Item key={t} label={t} value={t} />
                         ))}
                     </Picker>
                 </View>
 
-                <View style={styles.smallPicker}>
+                <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
                     <Picker
                         selectedValue={filters.team}
                         onValueChange={(value) =>
-                        setFilters((prev) => ({ ...prev, team: value }))
+                            setFilters((prev) => ({ ...prev, team: value }))
                         }
                     >
                         <Picker.Item label="All Teams" value="" />
                         {teams.map((t) => (
-                        <Picker.Item key={t} label={t} value={t} />
+                            <Picker.Item key={t} label={t} value={t} />
                         ))}
                     </Picker>
                 </View>
@@ -197,10 +218,12 @@ export default function FitnessScreen() {
 
             {role === "admin" && (
                 <TouchableOpacity
-                    style={styles.createButton}
+                    style={[styles.createButton, { backgroundColor: colors.accent }]}
                     onPress={() => router.push("/admin/createIntramural")}
                 >
-                    <Text style={styles.createButtonText}>+ Create Intramural</Text>
+                    <Text style={styles.createButtonText}>
+                        + Create Intramural
+                    </Text>
                 </TouchableOpacity>
             )}
 
@@ -209,7 +232,9 @@ export default function FitnessScreen() {
                 renderItem={renderGame}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                <Text style={styles.emptyText}>No intramurals found.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text }]}>
+                        No intramurals found.
+                    </Text>
                 }
             />
         </View>

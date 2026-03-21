@@ -45,13 +45,23 @@ export default function ClubsScreen() {
     });
 
     const renderClub = ({ item }: { item: Club }) => {
-        const scheduleText =
-            item.schedule
-                ?.map((m) => `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
-        
-        const isOfficer =
-            item.officers?.includes(user?.uid ?? "");
+        const scheduleText = item.schedule
+        ?.map((m) => {
+            if (
+                m.weekday === undefined ||
+                m.frequency === undefined ||
+                !m.startTime ||
+                !m.endTime
+            ) {
+                return null;
+            }
 
+            return `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+        })
+        .filter((text): text is string => text !== null)
+        .join(" • ");
+        
+        
         const isOfficer = item.officers?.includes(user?.uid ?? "");
         const canManage = role === "admin" || isOfficer;
 
