@@ -5,12 +5,14 @@ import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from "../../constants/theme";
 import { AuthContext } from '../../context/AuthProvider';
 import { FitnessService } from '../../services/fitnessService';
 import { Club, Intramural } from '../../types/subscription';
 
 export default function FitnessScreen() {
     const [view, setView] = useState<"fitness" | "intramurals">("intramurals");
+    const colors = useTheme();
     const { role } = useContext(AuthContext);
     const router = useRouter();
     const [games, setGames] = useState<Intramural[]>([]);
@@ -107,39 +109,53 @@ export default function FitnessScreen() {
     const renderGame = ({ item }: { item: Intramural }) => {
         const scheduleText =
             item.schedule
-                ?.map((m) => `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`);
-            
-        
-        const canManage = role === "admin";
-        return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-            router.push({
-                pathname: "/intramurals/[id]",
-                params: { id: item.id! },
-            })
-            }
-        >
-            <Text style={styles.name}>{item.name}</Text>
+                ?.map((m) => {
+                    if (!m.startDate || !m.startTime || !m.endTime) return null;
 
-            <Text style={styles.schedule}>
-                {[scheduleText, item.tourney + '-Tourney'].filter(Boolean).join(" • ")}
-            </Text>
-            {canManage && 
-                <TouchableOpacity
-                    style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
-                    onPress={() =>
-                        router.push({
-                            pathname: "/intramurals/[id]/editGame",
-                            params: { id: item.id! },
-                        })
-                    }
-                >
-                    <Feather name="edit-2" size={20} color="#4BA3C7" />
-                </TouchableOpacity>
-            }
-        </TouchableOpacity>
+                    return `${formatDate(m.startDate)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+                })
+                .filter((text): text is string => text !== null)
+                .join(" • ");
+
+        const canManage = role === "admin";
+
+        return (
+            <TouchableOpacity
+                style={[styles.card, { backgroundColor: colors.card }]}
+                onPress={() =>
+                    router.push({
+                        pathname: "/intramurals/[id]",
+                        params: { id: item.id! },
+                    })
+                }
+            >
+                <Text style={[styles.name, { color: colors.text }]}>
+                    {item.name}
+                </Text>
+
+                <Text style={[styles.schedule, { color: colors.accent }]}>
+                    {[scheduleText, item.tourney + "-Tourney"].filter(Boolean).join(" • ")}
+                </Text>
+
+                {canManage && (
+                    <TouchableOpacity
+                        style={{
+                            position: "absolute",
+                            right: 12,
+                            top: "50%",
+                            transform: [{ translateY: -10 }],
+                        }}
+                        onPress={() =>
+                            router.push({
+                                pathname: "/intramurals/[id]/editGame",
+                                params: { id: item.id! },
+                            })
+                        }
+                    >
+                        <Feather name="edit-2" size={20} color={colors.accent} />
+                    </TouchableOpacity>
+                )}
+            </TouchableOpacity>
         );
     };
 
@@ -187,32 +203,31 @@ export default function FitnessScreen() {
 
     if (loading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#4BA3C7" />
+            <View style={[styles.centered, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.accent} />
             </View>
         );
     }
 
     if (error) {
         return (
-            <View style={styles.centered}>
-                <Text style={{color: "red"}}>{error}</Text>
+            <View style={[styles.centered, { backgroundColor: colors.background }]}>
+                <Text style={{ color: "red" }}>{error}</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-
-            <Text style={styles.header}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.header, { color: colors.text }]}>
                 {view === "intramurals" ? "Intramurals" : "Fitness Classes"}
             </Text>
 
             <View style={styles.toggleContainer}>
                 <TouchableOpacity
                     style={[
-                    styles.toggleButton,
-                    view === "intramurals" && styles.activeToggle
+                        styles.toggleButton,
+                        view === "intramurals" && styles.activeToggle
                     ]}
                     onPress={() => setView("intramurals")}
                 >
@@ -250,11 +265,11 @@ export default function FitnessScreen() {
                     placeholder="Search intramurals..."
                     value={search}
                     onChangeText={setSearch}
-                    style={styles.search}
+                    style={[styles.search, { backgroundColor: colors.card, color: colors.text }]}
                     placeholderTextColor="#888"
                 />
                 <View style={styles.pickerWrapper}>
-                    <View style={styles.smallPicker}>
+                    <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
                         <Picker
                             selectedValue={filters.sport}
                             onValueChange={(value) =>
@@ -268,7 +283,7 @@ export default function FitnessScreen() {
                         </Picker>
                     </View>
 
-                    <View style={styles.smallPicker}>
+                    <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
                         <Picker
                             selectedValue={filters.tourney}
                             onValueChange={(value) =>
@@ -276,13 +291,13 @@ export default function FitnessScreen() {
                             }
                         >
                             <Picker.Item label="All Tourneys" value="" />
-                            {tourneys.map((t) => (
+                                {tourneys.map((t) => (
                             <Picker.Item key={t} label={t} value={t} />
                             ))}
                         </Picker>
                     </View>
 
-                    <View style={styles.smallPicker}>
+                    <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
                         <Picker
                             selectedValue={filters.team}
                             onValueChange={(value) =>
@@ -299,10 +314,12 @@ export default function FitnessScreen() {
 
                 {role === "admin" && (
                     <TouchableOpacity
-                        style={styles.createButton}
+                        style={[styles.createButton, { backgroundColor: colors.accent }]}
                         onPress={() => router.push("/admin/createIntramural")}
                     >
-                        <Text style={styles.createButtonText}>+ Create Intramural</Text>
+                        <Text style={styles.createButtonText}>
+                            + Create Intramural
+                        </Text>
                     </TouchableOpacity>
                 )}
 
@@ -311,7 +328,7 @@ export default function FitnessScreen() {
                     renderItem={renderGame}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                    <Text style={styles.emptyText}>No intramurals found.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text }]}>No intramurals found.</Text>
                     }
                 /></> 
             ) : (
@@ -319,12 +336,12 @@ export default function FitnessScreen() {
                     placeholder="Search fitness classes..."
                     value={search}
                     onChangeText={setSearch}
-                    style={styles.search}
+                    style={[styles.search, { backgroundColor: colors.card, color: colors.text }]}
                     placeholderTextColor="#888"
                 />
                 {role === "admin" && (
                     <TouchableOpacity
-                        style={styles.createButton}
+                        style={[styles.createButton, { backgroundColor: colors.accent }]}
                         onPress={() => router.push("/admin/createFitnessClass")}
                     >
                         <Text style={styles.createButtonText}>+ Create Fitness Class</Text>
@@ -336,7 +353,7 @@ export default function FitnessScreen() {
                     renderItem={renderClass}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                    <Text style={styles.emptyText}>No fitness classes found.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text }]}>No fitness classes found.</Text>
                     }
                 />
                 

@@ -2,12 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { HapticTab } from '../../components/haptic-tab';
-import { useColorScheme } from '../../hooks/use-color-scheme';
 import { requestNotificationPermissions } from '../../services/notifications';
+import { useTheme } from "../../constants/theme";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const colors = useTheme();
 
   React.useEffect(() => {
     // Request notification permissions on app load
@@ -17,20 +16,14 @@ export default function TabLayout() {
   // name is for internal usage, title is for user view
   return (
     <Tabs
-      screenOptions={{
-          tabBarStyle: 
-            {
-                backgroundColor: isDark ? '#00008B' : '#0000FF', // Dark Blue / Blue
-            },
-            tabBarActiveTintColor: isDark ? '#B8860B' : '#FFD700', // Dark Gold / Gold
-            tabBarInactiveTintColor: isDark ? '#555' : '#ccc',
-            headerShown: false,
-            tabBarButton: HapticTab,
-            sceneStyle: 
-            {
-                backgroundColor: isDark ? '#000033' : '#E6F0FF', // Adjust for readability
-            },
-      }}>
+          screenOptions={{
+              tabBarStyle: {
+                  backgroundColor: colors.background,
+              },
+              tabBarActiveTintColor: colors.tabIconSelected,
+              tabBarInactiveTintColor: colors.tabIconDefault,
+          }}
+      >
       <Tabs.Screen
               name="mainCalendar"
               options={{
