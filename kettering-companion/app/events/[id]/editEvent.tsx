@@ -4,9 +4,7 @@ import { FormErrors, validateEntity } from "@/lib/validateEntity";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import {
-  View
-} from "react-native";
+import { View } from "react-native";
 import { db } from "../../../lib/firebase";
 import { EventService } from "../../../services/eventService";
 import { Event } from "../../../types/subscription";
@@ -15,10 +13,10 @@ import { Event } from "../../../types/subscription";
 export default function EditEventScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-
+  // State for form errors and values
   const [errors, setErrors] = useState<FormErrors>({});
   const [values, setValues] = useState<Event | null>(null);
-
+  // Load event data on component mount
   useEffect(() => {
     const loadEvent = async () => {
       const event = await EventService.getEvent(id as string);
@@ -38,14 +36,14 @@ export default function EditEventScreen() {
     };
     loadEvent();
   }, [id]);
-
+  // Handle event update
   const handleUpdateEvent = async () => {
     if (!values) return;
     const {errors: validationErrors, parsedStart, parsedEnd} = 
       validateEntity(values, "event");
     
     const time = values.schedule[0];
-
+    // Validate form values
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -54,7 +52,7 @@ export default function EditEventScreen() {
     if (!parsedStart || !parsedEnd) { return; }
 
     setErrors({});
-
+    // Create updated event object
     const updatedEvent = {
       ...values,
       schedule: [
@@ -65,12 +63,13 @@ export default function EditEventScreen() {
         }
       ]
     };
+    // Update event and regenerate meetings
     await EventService.updateEvent(values.id, updatedEvent);
     await EventService.regenerateMeetings(updatedEvent);
 
     router.push("/(tabs)/events");
   };
-
+  // Handle event deletion
   const handleDeleteEvent = async () => {
     const eventId = id as string;
 
@@ -90,10 +89,9 @@ export default function EditEventScreen() {
   };
 
   if(!values) return null;
-
+  // Load event data on component mount
   return (
     <View style={{ flex: 1 }}>
-    
       <ClubForm
         values={values}
         setValues={setValues as React.Dispatch<React.SetStateAction<Event>>}
@@ -103,7 +101,6 @@ export default function EditEventScreen() {
         onDelete={handleDeleteEvent}
         isEvent={true}
       />
-
     </View>
   );
 }

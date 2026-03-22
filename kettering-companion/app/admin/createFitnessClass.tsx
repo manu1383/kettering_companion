@@ -7,11 +7,10 @@ import { UserService } from "../../services/userService";
 import { Club } from "../../types/subscription";
 
 export default function CreateFitnessClassScreen() {
-
+  // Router for navigation
   const router = useRouter();
   const [errors, setErrors] = useState<FormErrors>({});
-  const [timeError, setTimeError] = useState<string | null>(null);
-
+  // State for form values
   const [values, setValues] = useState<Club>({
     id: "",
     name: "",
@@ -30,7 +29,7 @@ export default function CreateFitnessClassScreen() {
     ],
     officers: []
   });
-  
+  // Handle form submission
   const handleSubmit = async () => {
     const {errors: validationErrors, parsedStart, parsedEnd} = 
       validateEntity(values, "fitness");
@@ -41,10 +40,11 @@ export default function CreateFitnessClassScreen() {
     }
 
     setErrors({});
-    await handleCreateClub(parsedStart!, parsedEnd!);
+    await handleCreateFitnessClass(parsedStart!, parsedEnd!);
   };
 
-  const handleCreateClub = async (parsedStart: string, parsedEnd: string) => {
+  // Create fitness class and handle officer assignment
+  const handleCreateFitnessClass = async (parsedStart: string, parsedEnd: string) => {
     const time = values.schedule[0];
 
     const id = values.name.toLowerCase().replace(/\s+/g, "-");
@@ -77,6 +77,7 @@ export default function CreateFitnessClassScreen() {
     router.push("/(tabs)/fitness");
   };
 
+  // Render the fitness class form with appropriate props
   return (
     <ClubForm
       values={values}

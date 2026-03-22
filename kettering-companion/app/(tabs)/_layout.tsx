@@ -25,19 +25,19 @@ export default function TabLayout() {
           }}
       >
       <Tabs.Screen
-              name="mainCalendar"
-              options={{
-                  title: 'Main Calendar',
-                  tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
-              }}
-          />
+        name="mainCalendar"
+        options={{
+            title: 'Main Calendar',
+            tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
+        }}
+      />
       <Tabs.Screen
-              name="maps"
-              options={{
-                  title: 'Maps',
-                  tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
-              }}
-          />
+        name="maps"
+        options={{
+            title: 'Maps',
+            tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="fitness"
         options={{

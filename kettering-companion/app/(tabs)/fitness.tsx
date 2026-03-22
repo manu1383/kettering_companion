@@ -11,6 +11,7 @@ import { FitnessService } from '../../services/fitnessService';
 import { Club, Intramural } from '../../types/subscription';
 
 export default function FitnessScreen() {
+    // State variables
     const [view, setView] = useState<"fitness" | "intramurals">("intramurals");
     const colors = useTheme();
     const { role } = useContext(AuthContext);
@@ -22,14 +23,14 @@ export default function FitnessScreen() {
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    // Filter states (for intramurals)
     const [filters, setFilters] = useState({
         sport: "",
         tourney: "",
         team: "",
         date: null,
     });
-
+    // Fetch intramurals on screen focus
     useEffect(() => {
         const fetchGames = async () => {
             const data = await FitnessService.getAllGames();
@@ -50,7 +51,7 @@ export default function FitnessScreen() {
         };
         fetchGames();
     }, []);
-
+    // Filter intramurals when filters change
     useEffect(() => {
         const filtered = games.filter(game => {
             const firstMatch = game.schedule?.[0];
@@ -85,7 +86,7 @@ export default function FitnessScreen() {
         });
         setFilteredGames(filtered);
     }, [filters, games]);
-
+    // Fetch fitness classes on screen focus
     useEffect(() => {
         const fetchClasses = async () => {
             const data = await ClubService.getAllFitnessClasses();
@@ -94,18 +95,19 @@ export default function FitnessScreen() {
         };
         fetchClasses();
     }, []);
-
+    // Filter fitness classes when search changes
     useEffect(() => {
         const filtered = classes.filter(c => 
             c.name.toLowerCase().includes(search.toLowerCase())
         );
         setFilteredClasses(filtered);
     }, [search, classes]);
-
+    // Extract unique sports, tourneys, and teams for filter dropdowns
     const sports = [...new Set(games.map(g => g.sport))].filter(Boolean);
     const tourneys = [...new Set(games.map(g => g.tourney))].filter(Boolean);
     const teams = [...new Set(games.flatMap(g => [g.team1, g.team2]))].filter(Boolean);
-
+    
+    // Render intramural games
     const renderGame = ({ item }: { item: Intramural }) => {
         const scheduleText =
             item.schedule
@@ -158,7 +160,7 @@ export default function FitnessScreen() {
             </TouchableOpacity>
         );
     };
-
+    // Render fitness classes
     const renderClass = ({ item }: { item: Club }) => {
         const scheduleText = item.schedule?.map((m) => {
             const days = (m.weekdays || [])
@@ -216,7 +218,8 @@ export default function FitnessScreen() {
             </View>
         );
     }
-
+    // If no classes or games found, show empty state
+    // Show either intramurals or fitness classes based on selected view
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Text style={[styles.header, { color: colors.text }]}>
@@ -355,10 +358,7 @@ export default function FitnessScreen() {
                     ListEmptyComponent={
                     <Text style={[styles.emptyText, { color: colors.text }]}>No fitness classes found.</Text>
                     }
-                />
-                
-                
-                </>
+                /></>
             )}
         </View>
 
@@ -400,11 +400,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.07,
         shadowRadius: 8,
         elevation: 3,
-    },
-    description: {
-        fontSize: 14,
-        color: "#555",
-        marginBottom: 10,
     },
     emptyText: {
         textAlign: "center",

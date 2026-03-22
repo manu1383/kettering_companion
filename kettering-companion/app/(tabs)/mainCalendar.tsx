@@ -37,7 +37,6 @@ export default function DaySchedule() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [infoVisible, setInfoVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { user } = useContext(AuthContext);

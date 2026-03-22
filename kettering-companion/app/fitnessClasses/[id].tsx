@@ -16,17 +16,18 @@ import { copyCalendar } from "../../lib/copyCalendar";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/subscription";
-/* =============================    Component ============================= */
+
 export default function FitnessClassDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
-
+  // State variables
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
+  // Toggle subscription status
   const toggleSubscription = async (id: string, subscribe: boolean) => {
     try {
       if (!user) return;
@@ -35,7 +36,7 @@ export default function FitnessClassDetailScreen() {
         new Date().getFullYear() +
         "-" +
         String(new Date().getMonth() + 1).padStart(2, "0");
-
+      // Subscribe or unsubscribe and update calendar accordingly
       if (subscribe) {
         await ClubService.subscribeToClub(user.uid, id);
         await copyCalendar(user.uid, month);
@@ -52,7 +53,7 @@ export default function FitnessClassDetailScreen() {
       setError("Failed to update subscription. Please try again.");
     }
   };
-
+  // Fetch fitness class details on component mount
   useEffect(() => {
     const fetchClass = async () => {
       try {
@@ -64,14 +65,14 @@ export default function FitnessClassDetailScreen() {
           setLoading(false);
           return;
         }
-
+        // Set fitness class data
         setClub(clubData);
 
         const officerData = await UserService.getOfficersFromIds(
           clubData.officers ?? []
         );
         setOfficers(officerData);
-
+        // Check subscription status
         const subDoc = await getDoc(
           doc(db, "users", user.uid, "subscriptions", id as string)
         );
@@ -104,7 +105,7 @@ export default function FitnessClassDetailScreen() {
       </View>
     );
   }
-
+  // Show fitness class details, officers, and subscription button
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.name}>{club.name}</Text>
@@ -185,16 +186,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 22,
   },
-  section: {
-    fontSize: 15,
-    color: "#555",
-    marginBottom: 10,
-  },
-  link: {
-    fontSize: 15,
-    color: "#4BA3C7",
-    fontWeight: "600",
-  },
   sectionTitle: {
     fontWeight: "700",
     marginTop: 15,
@@ -218,18 +209,6 @@ const styles = StyleSheet.create({
   officerEmail: {
     fontSize: 14,
     color: "#4BA3C7",
-  },
-  calendarButton: {
-    backgroundColor: "#4BA3C7",
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  calendarButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
   },
   subscribeButton: {
     backgroundColor: "#4BA3C7",

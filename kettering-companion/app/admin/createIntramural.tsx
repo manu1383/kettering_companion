@@ -8,7 +8,7 @@ import { Intramural } from "../../types/subscription";
 
 export default function CreateIntramuralScreen() {
     const router = useRouter();
-    
+    // State for form errors
     const [errors, setErrors] = useState<FormErrors>({});
     const [values, setValues] = useState<Intramural>({
         id: "",
@@ -28,7 +28,7 @@ export default function CreateIntramuralScreen() {
         sport: "",
         tourney: "",
     });
-
+    // Handle form submission
     const handleSubmit = async () => {
         const {errors: validationErrors, parsedStart, parsedEnd} =
             validateIntramural(values);
@@ -41,7 +41,7 @@ export default function CreateIntramuralScreen() {
         setErrors({});
         await handleCreateGame(parsedStart!, parsedEnd!);
     };
-
+    // Create game and handle any additional logic
     const handleCreateGame = async (parsedStart: string, parsedEnd: string) => {
         const time = values.schedule[0];
     
@@ -72,7 +72,7 @@ export default function CreateIntramuralScreen() {
     
         router.push("/(tabs)/fitness");
     };
-
+    // Render the intramural form with appropriate props
     return (
         <IntramuralForm
             values={values}

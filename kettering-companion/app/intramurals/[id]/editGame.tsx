@@ -14,10 +14,10 @@ import { Intramural } from "../../../types/subscription";
 export default function EditEventScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-
+  // State for form errors and values
   const [errors, setErrors] = useState<FormErrors>({});
   const [values, setValues] = useState<Intramural | null>(null);
-
+  // Load game data on component mount
   useEffect(() => {
     const loadGame = async () => {
       const game = await FitnessService.getGame(id as string);
@@ -40,7 +40,7 @@ export default function EditEventScreen() {
 
   const handleUpdateGame = async () => {
     if (!values) return;
-
+    // Validate form values
     const {errors: validationErrors, parsedStart, parsedEnd} =
       validateIntramural(values);
 
@@ -69,7 +69,7 @@ export default function EditEventScreen() {
 
     router.push("/(tabs)/fitness");
   };
-
+  // Handle game deletion
   const handleDeleteGame = async () => {
     const gameId = id as string;
 
@@ -89,10 +89,9 @@ export default function EditEventScreen() {
   };
 
   if(!values) return null;
-
+  // Show form with loaded game data
   return (
     <View style={{ flex: 1 }}>
-    
       <IntramuralForm
         values={values}
         setValues={setValues as React.Dispatch<React.SetStateAction<Intramural>>}
@@ -101,7 +100,6 @@ export default function EditEventScreen() {
         errors={errors}
         onDelete={handleDeleteGame}
       />
-
     </View>
   );
 }

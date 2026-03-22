@@ -16,17 +16,17 @@ import { copyCalendar } from "../../lib/copyCalendar";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/subscription";
-/* =============================    Component ============================= */
+
 export default function ClubDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
-
+  // State variables
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
-
+  // Toggle subscription status
   const toggleSubscription = async (id: string, subscribe: boolean) => {
     try {
       if (!user) return;
@@ -35,7 +35,7 @@ export default function ClubDetailScreen() {
         new Date().getFullYear() +
         "-" +
         String(new Date().getMonth() + 1).padStart(2, "0");
-
+      // Subscribe or unsubscribe and update calendar accordingly
       if (subscribe) {
         await ClubService.subscribeToClub(user.uid, id);
         await copyCalendar(user.uid, month);
@@ -52,12 +52,12 @@ export default function ClubDetailScreen() {
       setError("Failed to update subscription. Please try again.");
     }
   };
-
+  // Fetch club details on component mount
   useEffect(() => {
     const fetchClub = async () => {
       try {
         if (!id || !user) return;
-
+        // Get club data
         const clubData = await ClubService.getClub(id as string);
         if (!clubData) {
           setError("Club not found.");
@@ -66,12 +66,12 @@ export default function ClubDetailScreen() {
         }
 
         setClub(clubData);
-
+        // Get officer details
         const officerData = await UserService.getOfficersFromIds(
           clubData.officers ?? []
         );
         setOfficers(officerData);
-
+        // Check subscription status
         const subDoc = await getDoc(
           doc(db, "users", user.uid, "subscriptions", id as string)
         );
@@ -104,7 +104,7 @@ export default function ClubDetailScreen() {
       </View>
     );
   }
-
+  // Render club details and subscription button
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.name}>{club.name}</Text>
@@ -202,19 +202,9 @@ const styles = StyleSheet.create({
     color: "#555",
     marginBottom: 10,
   },
-  link: {
-    fontSize: 15,
-    color: "#4BA3C7",
-    fontWeight: "600",
-  },
   sectionTitle: {
     fontWeight: "700",
     marginTop: 15,
-  },
-  schedule: {
-    color: "#4BA3C7",
-    fontWeight: "600",
-    marginBottom: 4,
   },
   officerCard: {
     backgroundColor: "#fff",
@@ -231,18 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4BA3C7",
   },
-  calendarButton: {
-    backgroundColor: "#4BA3C7",
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  calendarButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
   subscribeButton: {
     backgroundColor: "#4BA3C7",
     paddingVertical: 12,
@@ -258,12 +236,10 @@ const styles = StyleSheet.create({
   scheduleContainer: {
     marginTop: 6,
   },
-
   dateText: {
     fontSize: 13,
     color: "#666",
   },
-
   scheduleText: {
     fontSize: 15,
     fontWeight: "600",

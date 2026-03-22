@@ -12,12 +12,11 @@ import { Club } from "../../../types/subscription";
 export default function EditClubScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-
+  // State for form errors
   const [errors, setErrors] = useState<FormErrors>({});
-  const [timeError, setTimeError] = useState<string | null>(null);
   const [values, setValues] = useState<Club | null>(null);
 
-
+  // Load club data on component mount
   useEffect(() => {
     const loadClub = async () => {  
       const club = await ClubService.getClub(id as string);
@@ -37,7 +36,7 @@ export default function EditClubScreen() {
     };
     loadClub();
   }, [id]);
-
+  // Handle club update
   const handleUpdateClub = async () => {
     if (!values) return;
 
@@ -65,12 +64,12 @@ export default function EditClubScreen() {
         }
       ]
     };
-
+    // Update club and regenerate meetings
     await ClubService.updateClub(values.id, updatedClub);
     await ClubService.regenerateMeetings(updatedClub);
 
     const officerEmail = values.officers?.[0];
-  
+    // Add officer permissions if an email is provided
     if (officerEmail) {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
@@ -81,7 +80,7 @@ export default function EditClubScreen() {
 
     router.push("/(tabs)/clubs");
   };
-
+  // Handle club deletion
   const handleDeleteClub = async () => {
     if (!values) return;
     if (!values.id) return;
@@ -93,7 +92,6 @@ export default function EditClubScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-
       <ClubForm
         values={values}
         setValues={setValues as React.Dispatch<React.SetStateAction<Club>>}
@@ -102,7 +100,6 @@ export default function EditClubScreen() {
         errors={errors}
         onDelete={handleDeleteClub}
       />
-
     </View>
   );
 }

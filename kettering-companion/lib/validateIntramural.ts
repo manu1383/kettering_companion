@@ -1,8 +1,7 @@
-// /lib/validateIntramural.ts
 import { Intramural } from "../types/subscription";
 import { parseTime } from "./time";
 import { isValidDateFormat } from "./validateEntity";
-
+// Validation logic specific to intramural games, including team names, location, sport, tourney, and schedule validation
 export type FormErrors = {
     general?: string;
     team1?: string;
@@ -14,7 +13,7 @@ export type FormErrors = {
     sport?: string;
     tourney?: string;
 };
-
+// Validation result type for intramural validation, including any errors and parsed start/end times
 export type IntramuralValidationResult = {
     errors: FormErrors;
     parsedStart?: string | null;

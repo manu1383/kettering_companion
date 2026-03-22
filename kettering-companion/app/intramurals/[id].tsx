@@ -16,22 +16,17 @@ import { db } from "../../lib/firebase";
 import { FitnessService } from "../../services/fitnessService";
 import { Intramural } from "../../types/subscription";
 
-/* =============================
-   Component
-============================= */
-
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
-
+  // State variables
   const [game, setGame] = useState<Intramural | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
-
   const [team1Sub, setTeam1Sub] = useState(false);
   const [team2Sub, setTeam2Sub] = useState(false);
-
+  // Fetch game details on component mount
   useEffect(() => {
     const fetchGame = async () => {
       const gameData = await FitnessService.getGame(id as string);
@@ -42,7 +37,7 @@ export default function EventDetailScreen() {
     };
     fetchGame();
   }, [id]);
-
+  // Get the team ID for subscription management
   const getTeamId = (teamName: string) => {
     if(!game) return null;
     return `${game.sport}_${game.tourney}_${teamName}`.toLowerCase().replace(/\s+/g, "-");
@@ -53,7 +48,7 @@ export default function EventDetailScreen() {
 
     const team1Id = getTeamId(game.team1);
     const team2Id = getTeamId(game.team2);
-
+    // Check if user is subscribed to either team or the game itself
     const [doc1, doc2, gameDoc] = await Promise.all([
       team1Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team1Id)) : null,
       team2Id ? getDoc(doc(db, "users", user.uid, "subscriptions", team2Id)) : null,
@@ -84,7 +79,7 @@ export default function EventDetailScreen() {
       </View>
     );
   }
-
+  // Handle game subscription
   const addGameToCalendar = async () => {
     if (!game || !user) return;
 
@@ -107,13 +102,13 @@ export default function EventDetailScreen() {
 
     alert("Game added to calendar!");
   };
-
+  // Handle game unsubscription
   const unsubscribeFromGame = async () => {
     if (!user || !game) return;
     const uid = user.uid;
     const gameId = game.id;
     const subRef = doc(db, "users", uid, "subscriptions", gameId);
-    
+    // Delete the subscription document for the game
     await deleteDoc(subRef);
     const month =
       new Date().getFullYear() +
@@ -123,13 +118,13 @@ export default function EventDetailScreen() {
     await copyCalendar(uid, month);
     alert("Game removed from calendar!");
   };
-
+  // Handle team subscription
   const subscribeToTeam = async (teamName: string) => {
     if (!game || !user) return;
 
     const teamId = getTeamId(teamName)!;
     const batch = writeBatch(db);
-
+    // Add subscription document for the team
     batch.set(doc(db, "users", user.uid, "subscriptions", teamId), {
       type: "team",
       teamId,
@@ -140,7 +135,7 @@ export default function EventDetailScreen() {
     });
 
     const snap = await getDocs(collection(db, "intramurals"));
-
+    // Subscribe to all games involving the team
     for (const d of snap.docs) {
       const g = d.data() as Intramural;
       if (
@@ -157,7 +152,7 @@ export default function EventDetailScreen() {
     }
 
     await batch.commit();
-
+    // Update subscription states
     if (teamName === game.team1) setTeam1Sub(true);
     if (teamName === game.team2) setTeam2Sub(true);
 
@@ -167,26 +162,24 @@ export default function EventDetailScreen() {
       String(new Date().getMonth() + 1).padStart(2, "0");
 
     await copyCalendar(user.uid, month);
-
     await checkSubscription();
 
     alert(`Subscribed to ${teamName}`);
     
   };
-
+  // Handle team unsubscription
   const unsubscribeFromTeam = async (teamName: string) => {
       if (!user || !game) return;
 
       const teamId = getTeamId(teamName)!;
       const batch = writeBatch(db);
-
+      // Delete the subscription document for the team
       batch.delete(doc(db, "users", user.uid, "subscriptions", teamId));
 
       const snap = await getDocs(collection(db, "users", user.uid, "subscriptions"));
-
+      // Unsubscribe from all games involving the team
       for (const d of snap.docs) {
         const data = d.data();
-
         if (
           data.type === "game" &&
           (data.team1Id === teamId || data.team2Id === teamId) &&
@@ -208,12 +201,11 @@ export default function EventDetailScreen() {
         String(new Date().getMonth() + 1).padStart(2, "0");
 
       await copyCalendar(user.uid, month);
-
       await checkSubscription();
 
       alert(`Unsubscribed from ${teamName}`);
   };
-
+  // Load game data on component mount
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.name}>{game.name}</Text>
@@ -286,15 +278,9 @@ export default function EventDetailScreen() {
           {team2Sub ? `Unfollow ${game.team2}` : `Follow ${game.team2}`}
         </Text>
       </TouchableOpacity>
-      
-    
     </ScrollView>
   );
 }
-
-/* =============================
-   Styles
-============================= */
 
 const styles = StyleSheet.create({
   container: {
@@ -313,17 +299,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1D3D47",
     marginBottom: 12,
-  },
-  description: {
-    fontSize: 16,
-    color: "#444",
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  section: {
-    fontSize: 15,
-    color: "#555",
-    marginBottom: 10,
   },
   sectionTitle: {
     fontWeight: "700",

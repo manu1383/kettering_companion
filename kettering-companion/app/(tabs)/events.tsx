@@ -1,15 +1,16 @@
-﻿import { formatDate, getWeekdayName, to12Hour } from '../../lib/time';
-import { Feather } from '@expo/vector-icons';
+﻿import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from "../../constants/theme";
 import { AuthContext } from '../../context/AuthProvider';
+import { formatDate, to12Hour } from '../../lib/time';
 import { EventService } from '../../services/eventService';
 import { Event } from '../../types/subscription';
-import { useTheme } from "../../constants/theme";
 
 export default function EventsScreen() {
     const colors = useTheme();
+    // State variables
     const [events, setEvents] = useState<Event[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -17,6 +18,7 @@ export default function EventsScreen() {
     const router = useRouter();
     const { role } = useContext(AuthContext);
 
+    // Fetch events on screen focus
     useFocusEffect(
         useCallback(() => {
             const fetchEvents = async () => {
@@ -29,10 +31,12 @@ export default function EventsScreen() {
         }, [])
     );
 
+    // Filter events based on search query
     const filteredEvents = events.filter((event) =>
         event.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    // Render individual event card
     const renderEvent = ({ item }: { item: Event }) => {
         const scheduleText =
             item.schedule
@@ -107,6 +111,7 @@ export default function EventsScreen() {
     }
 
    return (
+        // Main container with header, search bar, and event list
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Text style={[styles.header, { color: colors.text }]}>
                 Events

@@ -6,9 +6,10 @@ import { EventService } from "../../services/eventService";
 import { Event } from "../../types/subscription";
 
 export default function CreateEventScreen() {
+  // Router for navigation
   const router = useRouter();
   const [errors, setErrors] = useState<FormErrors>({});
-
+  // State for form values
   const [values, setValues] = useState<Event>({
     id: "",
     name: "",
@@ -27,7 +28,7 @@ export default function CreateEventScreen() {
     ],
     attendees: []
   });
-
+  // Handle form submission
   const handleSubmit = async () => {
     const {errors: validationErrors, parsedStart, parsedEnd} = 
       validateEntity(values, "event");
@@ -41,7 +42,7 @@ export default function CreateEventScreen() {
     await handleCreateEvent(parsedStart!, parsedEnd!);
   };
 
-
+  // Create event and handle any additional logic
   const handleCreateEvent = async (parsedStart:string, parsedEnd:string) => {
     const eventId = values.name.toLowerCase().replace(/\s+/g, "-");
     const time = values.schedule[0];
@@ -62,7 +63,7 @@ export default function CreateEventScreen() {
 
     router.push("/(tabs)/events");
   };
-
+  // Render the event form with appropriate props
   return (
     <ClubForm
       values={values}

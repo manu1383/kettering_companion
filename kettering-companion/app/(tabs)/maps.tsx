@@ -1,17 +1,17 @@
-﻿import {
-    View,
-    Text,
-    StyleSheet,
-    Pressable,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState, useEffect } from "react";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../constants/theme";
 import { BUILDINGS, ROOM_INDEX, validateRoom } from "./maps/buildings";
 import { useContainedImageLayout } from "./maps/useContainedImageLayout";
 import ZoomableImage from "./maps/ZoomableImage";
-import { useTheme } from "../../constants/theme";
 
 type Layout = ReturnType<typeof useContainedImageLayout>;
 

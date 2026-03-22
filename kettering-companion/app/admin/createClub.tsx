@@ -7,10 +7,11 @@ import { UserService } from "../../services/userService";
 import { Club } from "../../types/subscription";
 
 export default function CreateClubScreen() {
+  // Router for navigation
   const router = useRouter();
-
+  // State for form errors
   const [errors, setErrors] = useState<FormErrors>({});
-
+  // State for form values
   const [values, setValues] = useState<Club>({
     id: "",
     name: "",
@@ -30,6 +31,7 @@ export default function CreateClubScreen() {
     officers: []
   });
 
+  // Handle form submission
   const handleSubmit = async () => {
     const {errors: validationErrors, parsedStart, parsedEnd} = 
       validateEntity(values, "club");
@@ -43,6 +45,7 @@ export default function CreateClubScreen() {
     await handleCreateClub(parsedStart!, parsedEnd!);
   };
 
+  // Create club and handle officer assignment
   const handleCreateClub = async (parsedStart: string, parsedEnd: string) => {
     const id = values.name.toLowerCase().replace(/\s+/g, "-");
     const time = values.schedule[0];
@@ -75,7 +78,8 @@ export default function CreateClubScreen() {
 
     router.push("/(tabs)/clubs");
   };
-
+  
+  // Render the club form with current values, errors, and submit handler
   return (
     <ClubForm
       values={values}

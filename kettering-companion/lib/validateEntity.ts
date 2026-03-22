@@ -1,18 +1,17 @@
 import { Club } from "../types/subscription";
 import { parseTime } from "./time";
-
+// Validation logic for clubs, events, fitness classes, and intramurals
 export type ValidationResult = {
   errors: FormErrors;
   parsedStart?: string | null;
   parsedEnd?: string | null;
 }
-
+// Main validation function that checks form values based on the entity type
 export type EntityType =
   | "club"
   | "event"
-  | "fitness"
-  | "intramural";
-
+  | "fitness";
+// Validates form values for clubs, events, and fitness classes
 export type FormErrors = {
   general?: string;
   name?: string;
@@ -29,7 +28,7 @@ export function validateEntity(
 ): ValidationResult {
   const errors: FormErrors = {};
   const time = values.schedule?.[0];
-
+  // Variables to hold parsed start and end times for validation results
   let parsedStart: string | null | undefined;
   let parsedEnd: string | null | undefined;
   
@@ -60,14 +59,10 @@ export function validateEntity(
     }
   }
 
-  if (type !== "intramural") {
-    
-  }
-
   if (time) {
     if (!time.startDate) {
       errors.date = "Start date is required.";
-    } else if (type !== "event" && type !== "intramural" && !time.endDate) {
+    } else if (type !== "event" && !time.endDate) {
       errors.date = "End date is required.";
     } 
 
@@ -78,22 +73,20 @@ export function validateEntity(
       errors.date = "End date must be in YYYY-MM-DD format.";
     }
 
-    if (type !== "intramural") {
-      if (!time) {
-        errors.time = "Schedule is required.";
-      } 
-      parsedStart = parseTime(time.startTime);
-      parsedEnd = parseTime(time.endTime);
+    parsedStart = parseTime(time.startTime);
+    parsedEnd = parseTime(time.endTime);
 
-      if (!parsedStart || !parsedEnd) {
-        errors.time = "Please enter valid start and end times.";
-      } else if (parsedStart >= parsedEnd) {
-        errors.time = "End time must be after start time.";
-      }
+    if (!parsedStart || !parsedEnd) {
+      errors.time = "Please enter valid start and end times.";
+    } else if (parsedStart >= parsedEnd) {
+      errors.time = "End time must be after start time.";
     }
+    
+  } else {
+    errors.time = "Schedule is required.";
   }
 
-  if (type !== "event" && type !== "intramural") {
+  if (type !== "event") {
     if (!time?.weekdays || time.weekdays.length === 0) {
       errors.time = "Select at least one day.";
     }
@@ -106,11 +99,11 @@ export function validateEntity(
   return { errors, parsedStart, parsedEnd };
 }
 
-
+// Helper function to validate email format using a simple regex
 export function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
-
+// Helper function to validate date format (YYYY-MM-DD) and check if it's a valid calendar date
 export function isValidDateFormat(date: string): boolean {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
   if (!regex.test(date)) return false;

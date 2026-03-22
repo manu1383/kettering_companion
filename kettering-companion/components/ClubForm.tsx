@@ -2,7 +2,7 @@ import { FormErrors } from "@/lib/validateEntity";
 import { Picker } from "@react-native-picker/picker";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Club, MeetingTime } from "../types/subscription";
-
+// This component is used for both creating and editing clubs and fitness classes, as well as events (with some conditional fields)
 type Props = {
     values: Club;
     setValues: React.Dispatch<React.SetStateAction<Club>>;
@@ -13,7 +13,7 @@ type Props = {
     isEvent?: boolean;
     isFitnessClass?: boolean;
 };
-
+// Main form component for clubs, fitness classes, and events
 export default function ClubForm({
   values,
   setValues,
@@ -24,14 +24,14 @@ export default function ClubForm({
   isEvent,
   isFitnessClass,
 }: Props) {
-
+    // Helper functions to update form state
     const update = (field: keyof Club, value: any) => {
         setValues(prev => ({
             ...prev,
             [field]: value
         }));
     };
-
+    // Update schedule fields
     const updateSchedule = (field: keyof MeetingTime, value: any) => {
         setValues(prev => ({
             ...prev,
@@ -43,14 +43,14 @@ export default function ClubForm({
             ]
         }));
     };
-
+    // Update officer/instructor email (sets permissions)
     const updateOfficer = (value: string) => {
         setValues(prev => ({
             ...prev,
             officers: value ? [value] : []
         }));
     };
-
+    // Toggle weekday selection for schedule
     const toggleWeekday = (day: number) => {
         setValues((prev) => {
             const current = prev.schedule[0];
@@ -262,38 +262,65 @@ export default function ClubForm({
 }
 
 const styles = StyleSheet.create({
-  container:{ flex:1, backgroundColor:"#E6F0F3", padding:20 },
-  input:{ backgroundColor:"#fff", borderRadius:12, padding:14, marginBottom:15 },
-  picker:{ backgroundColor:"#fff", borderRadius:12, marginBottom:15 },
-  subHeader:{ fontSize:18, fontWeight:"700", marginBottom:10 },
-  label:{ fontWeight:"700", marginBottom:10 },
-  button:{ backgroundColor:"#4BA3C7", padding:14, borderRadius:14, alignItems:"center" },
-  buttonText:{ color:"#fff", fontWeight:"700", fontSize:16 },
-  errorText:{ color:"red", marginBottom:10 },
-  weekdayContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 15,
+    container:{ 
+        flex:1, 
+        backgroundColor:"#E6F0F3", 
+        padding:20 
     },
-
+    input:{ 
+        backgroundColor:"#fff", 
+        borderRadius:12,
+        padding:14, 
+        marginBottom:15 
+    },
+    picker:{ 
+        backgroundColor:"#fff", 
+        borderRadius:12, 
+        marginBottom:15 
+    },
+    subHeader:{ 
+        fontSize:18, 
+        fontWeight:"700", 
+        marginBottom:10 
+    },
+    label:{ 
+        fontWeight:"700", 
+        marginBottom:10 
+    },
+    button:{ 
+        backgroundColor:"#4BA3C7", 
+        padding:14, borderRadius:14, 
+        alignItems:"center" 
+    },
+    buttonText:{ 
+        color:"#fff", 
+        fontWeight:"700", 
+        fontSize:16 
+    },
+    errorText:{ 
+        color:"red", 
+        marginBottom:10 
+    },
+    weekdayContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 15,
+    },
     dayButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#eee",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        backgroundColor: "#eee",
     },
-
     dayButtonSelected: {
-    backgroundColor: "#4BA3C7",
+        backgroundColor: "#4BA3C7",
     },
-
     dayText: {
-    color: "#333",
-    fontWeight: "600",
+        color: "#333",
+        fontWeight: "600",
     },
-
     dayTextSelected: {
-    color: "#fff",
-    },
+        color: "#fff",
+    }
 });
