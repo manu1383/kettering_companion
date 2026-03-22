@@ -1,5 +1,5 @@
-﻿import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+﻿import { useFocusEffect, useRouter } from 'expo-router';
+import { Pencil } from 'lucide-react-native';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from "../../constants/theme";
@@ -117,7 +117,7 @@ export default function ClubsScreen() {
                             })
                         }
                     >
-                        <Feather name="edit-2" size={20} color={colors.accent} />
+                        <Pencil size={20} color={colors.accent} />
                     </TouchableOpacity>
                 )}
             </TouchableOpacity>

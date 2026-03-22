@@ -1,8 +1,8 @@
 ﻿import { formatDate, formatFrequency, getPluralWeekday, to12Hour } from '@/lib/time';
 import { ClubService } from '@/services/clubService';
-import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import { Pencil } from 'lucide-react-native';
 import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from "../../constants/theme";
@@ -154,7 +154,7 @@ export default function FitnessScreen() {
                             })
                         }
                     >
-                        <Feather name="edit-2" size={20} color={colors.accent} />
+                        <Pencil size={20} color={colors.accent} />
                     </TouchableOpacity>
                 )}
             </TouchableOpacity>
@@ -173,7 +173,7 @@ export default function FitnessScreen() {
         const canManage = role === "admin";
         return (
         <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.card }]}
             onPress={() =>
             router.push({
                 pathname: "/fitnessClasses/[id]",
@@ -181,9 +181,11 @@ export default function FitnessScreen() {
             })
             }
         >
-            <Text style={styles.name}>{item.name}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>
+                {item.name}
+            </Text>
 
-            <Text style={styles.schedule}>
+            <Text style={[styles.schedule, { color: colors.accent }]}>
                 {[scheduleText, item.location].filter(Boolean).join(" • ")}
             </Text>
             {canManage && 
@@ -196,7 +198,7 @@ export default function FitnessScreen() {
                         })
                     }
                 >
-                    <Feather name="edit-2" size={20} color="#4BA3C7" />
+                    <Pencil size={20} color={colors.accent} />
                 </TouchableOpacity>
             }
         </TouchableOpacity>

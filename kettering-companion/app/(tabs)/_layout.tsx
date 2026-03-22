@@ -1,5 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import {
+  Bell,
+  Calendar,
+  Dumbbell,
+  GraduationCap,
+  LogOut,
+  Map,
+  Sparkles
+} from 'lucide-react-native';
 import React from 'react';
 import { useTheme } from "../../constants/theme";
 import { requestNotificationPermissions } from '../../services/notifications';
@@ -28,49 +36,49 @@ export default function TabLayout() {
         name="mainCalendar"
         options={{
             title: 'Main Calendar',
-            tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
+            tabBarIcon: ({ color }) => <Calendar size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="maps"
         options={{
             title: 'Maps',
-            tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
+            tabBarIcon: ({ color }) => <Map size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="fitness"
         options={{
             title: 'Fitness',
-            tabBarIcon: ({ color }) => <Ionicons name="barbell" size={28} color={color} />,
+            tabBarIcon: ({ color }) => <Dumbbell size={28} color={color} />,
         }}
           />
       <Tabs.Screen
         name="clubs"
         options={{
             title: 'Clubs',
-            tabBarIcon: ({ color }) => <Ionicons name="sparkles" size={28} color={color} />,
+            tabBarIcon: ({ color }) => <Sparkles size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="events"
         options={{
             title: 'Events',
-            tabBarIcon: ({ color }) => <Ionicons name="school" size={28} color={color} />,
+            tabBarIcon: ({ color }) => <GraduationCap size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
             title: 'Notifications',
-            tabBarIcon: ({ color }) => <Ionicons name="notifications" size={28} color={color} />,
+            tabBarIcon: ({ color }) => <Bell size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
           title: 'Logout',
-          tabBarIcon: ({ color }) => <Ionicons name="log-out" size={28}color={color} />,
+          tabBarIcon: ({ color }) => <LogOut size={28} color={color} />,
         }}
       />
     </Tabs>
