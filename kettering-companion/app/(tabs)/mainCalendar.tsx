@@ -1,21 +1,20 @@
 ﻿import { AuthContext } from "@/context/AuthProvider";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
+import { requestNotificationPermissions, scheduleEventNotification } from "@/services/notifications";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
-import { requestNotificationPermissions, scheduleEventNotification } from "@/services/notifications";
-import { MiniMap } from "./maps/MiniMap";
 import { useTheme } from "../../constants/theme";
+import { MiniMap } from "./maps/MiniMap";
 
 
 WebBrowser.maybeCompleteAuthSession();
