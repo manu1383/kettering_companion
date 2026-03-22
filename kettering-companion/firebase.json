@@ -30,6 +30,7 @@
       {
         "source": "**/*.@(ttf|woff|woff2)",
         "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
           { "key": "Access-Control-Allow-Origin", "value": "*" }
         ]
       }
