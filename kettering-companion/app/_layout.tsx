@@ -5,6 +5,8 @@ import 'react-native-reanimated';
 
 import { AuthContext, AuthProvider } from '@/context/AuthProvider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Ionicons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
 import { useContext } from 'react';
 
 function RootNavigator() {
@@ -27,6 +29,14 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  const [fontsLoaded] = useFonts({
+    ...Ionicons.font,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <AuthProvider>
