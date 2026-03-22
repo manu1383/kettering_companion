@@ -1,5 +1,6 @@
 import ClubForm from "@/components/ClubForm";
-import { parseTime, to12Hour } from "@/lib/time";
+import { to12Hour } from "@/lib/time";
+import { FormErrors, validateEntity } from "@/lib/validateEntity";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -15,7 +16,7 @@ export default function EditEventScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
-  const [timeError, setTimeError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [values, setValues] = useState<Event | null>(null);
 
   useEffect(() => {
@@ -40,14 +41,20 @@ export default function EditEventScreen() {
 
   const handleUpdateEvent = async () => {
     if (!values) return;
+    const {errors: validationErrors, parsedStart, parsedEnd} = 
+      validateEntity(values, "event");
+    
     const time = values.schedule[0];
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    if(!values.id) return
+
+    if (!parsedStart || !parsedEnd) { return; }
+
+    setErrors({});
+
     const updatedEvent = {
       ...values,
       schedule: [
@@ -92,7 +99,7 @@ export default function EditEventScreen() {
         setValues={setValues as React.Dispatch<React.SetStateAction<Event>>}
         onSubmit={handleUpdateEvent}
         submitLabel="Update Event"
-        timeError={timeError}
+        errors={errors}
         onDelete={handleDeleteEvent}
         isEvent={true}
       />

@@ -217,7 +217,23 @@ export default function AuthScreen() {
     const assertion =
       PhoneMultiFactorGenerator.assertion(credential);
 
-    await resolver.resolveSignIn(assertion);
+    try {
+      await resolver.resolveSignIn(assertion);
+    } catch (error){
+      if (error.code === "auth/invalid-verification-code") {
+        setError("Invalid verification code. Please try again.");
+        return;
+      } else if (error.code === "auth/code-expired") {
+        setError("Verification code has expired. Please request a new one.");
+        return;
+      } else if (error.code === "auth/missing-code") {
+        setError("Please enter the verification code sent to your phone.");
+        return;
+      } else {
+        setError(error.message);
+        return;
+      }
+    }
 
     setUser(auth.currentUser);
     router.replace('/(tabs)/mainCalendar');
@@ -318,7 +334,6 @@ export default function AuthScreen() {
                 />
               </>
             )}
-            {error ? (<text style={styles.errorText}>{error}</text>) : null}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -355,6 +370,8 @@ export default function AuthScreen() {
               placeholderTextColor="#888"
             />
 
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
             <TouchableOpacity style={styles.button} onPress={confirmEnrollment}>
               <Text style={styles.buttonText}>Confirm 2FA</Text>
             </TouchableOpacity>
@@ -372,6 +389,7 @@ export default function AuthScreen() {
               placeholder="123456"
               placeholderTextColor="#888"
             />
+            {error && <Text style={styles.errorText}>{error}</Text>}
             <TouchableOpacity style={styles.button} onPress={handleVerifyLogin2FA}>
               <Text style={styles.buttonText}>Verify Code</Text>
             </TouchableOpacity>

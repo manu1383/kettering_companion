@@ -1,3 +1,4 @@
+import { FormErrors } from "@/lib/validateEntity";
 import { Picker } from "@react-native-picker/picker";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Club, MeetingTime } from "../types/subscription";
@@ -7,7 +8,7 @@ type Props = {
     setValues: React.Dispatch<React.SetStateAction<Club>>;
     onSubmit: () => void;
     submitLabel: string;
-    timeError?: string | null;
+    errors?: FormErrors;
     onDelete?: () => void;
     isEvent?: boolean;
     isFitnessClass?: boolean;
@@ -18,10 +19,10 @@ export default function ClubForm({
   setValues,
   onSubmit,
   submitLabel,
-  timeError,
+  errors,
   onDelete,
   isEvent,
-  isFitnessClass
+  isFitnessClass,
 }: Props) {
 
     const update = (field: keyof Club, value: any) => {
@@ -134,43 +135,44 @@ export default function ClubForm({
             /></>
         }
         
-        <Text style={styles.subHeader}> Schedule</Text>
+        <Text style={styles.subHeader}>Schedule</Text>
 
-        <Text style={styles.label}>Day of Week</Text>
+        {!isEvent &&
+            <><Text style={styles.label}>Day of Week</Text>
+            <View style={styles.weekdayContainer}>
+                {[
+                    { label: "M", value: 1 },
+                    { label: "T", value: 2 },
+                    { label: "W", value: 3 },
+                    { label: "Th", value: 4 },
+                    { label: "F", value: 5 },
+                    { label: "Sa", value: 6 },
+                    { label: "Su", value: 0 },
+                ].map((day) => {
+                    const selected = time.weekdays?.includes(day.value);
 
-        <View style={styles.weekdayContainer}>
-            {[
-                { label: "M", value: 1 },
-                { label: "T", value: 2 },
-                { label: "W", value: 3 },
-                { label: "Th", value: 4 },
-                { label: "F", value: 5 },
-                { label: "Sa", value: 6 },
-                { label: "Su", value: 0 },
-            ].map((day) => {
-                const selected = time.weekdays?.includes(day.value);
-
-                return (
-                <TouchableOpacity
-                    key={day.value}
-                    style={[
-                    styles.dayButton,
-                    selected && styles.dayButtonSelected
-                    ]}
-                    onPress={() => toggleWeekday(day.value)}
-                >
-                    <Text
-                    style={[
-                        styles.dayText,
-                        selected && styles.dayTextSelected
-                    ]}
+                    return (
+                    <TouchableOpacity
+                        key={day.value}
+                        style={[
+                        styles.dayButton,
+                        selected && styles.dayButtonSelected
+                        ]}
+                        onPress={() => toggleWeekday(day.value)}
                     >
-                    {day.label}
-                    </Text>
-                </TouchableOpacity>
-                );
-            })}
-        </View>
+                        <Text
+                        style={[
+                            styles.dayText,
+                            selected && styles.dayTextSelected
+                        ]}
+                        >
+                        {day.label}
+                        </Text>
+                    </TouchableOpacity>
+                    );
+                })}
+            </View></>
+        }
 
         {!isEvent && (
             <><Text style={styles.label}>Repeat</Text>
@@ -225,7 +227,13 @@ export default function ClubForm({
             style={styles.input}
         />
 
-        {timeError && <Text style={styles.errorText}>{timeError}</Text>}
+        {errors?.general && <Text style={styles.errorText}>{errors.general}</Text>}
+        {errors?.name && <Text style={styles.errorText}>{errors.name}</Text>}
+        {errors?.location && <Text style={styles.errorText}>{errors.location}</Text>}
+        {errors?.email && <Text style={styles.errorText}>{errors.email}</Text>}
+        {errors?.officer && <Text style={styles.errorText}>{errors.officer}</Text>}
+        {errors?.time && <Text style={styles.errorText}>{errors.time}</Text>}
+        {errors?.date && <Text style={styles.errorText}>{errors.date}</Text>}
 
         <TouchableOpacity style={styles.button} onPress={onSubmit}>
             <Text style={styles.buttonText}>{submitLabel}</Text>

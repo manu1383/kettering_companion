@@ -1,13 +1,15 @@
+import { FormErrors } from "@/lib/validateEntity";
+import { validateIntramural } from "@/lib/validateIntramural";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import IntramuralForm from "../../components/IntramuralForm";
-import { parseTime } from "../../lib/time";
-import { IMService } from "../../services/fitnessService";
+import { FitnessService } from "../../services/fitnessService";
 import { Intramural } from "../../types/subscription";
 
 export default function CreateIntramuralScreen() {
     const router = useRouter();
-    const [timeError, setTimeError] = useState<string | null>(null);
+    
+    const [errors, setErrors] = useState<FormErrors>({});
     const [values, setValues] = useState<Intramural>({
         id: "",
         team1: "",
@@ -27,15 +29,22 @@ export default function CreateIntramuralScreen() {
         tourney: "",
     });
 
-    const handleCreateGame = async () => {
-        const time = values.schedule[0];
-        const parsedStart = parseTime(time.startTime);
-        const parsedEnd = parseTime(time.endTime);
-    
-        if (!parsedStart || !parsedEnd) {
-            setTimeError("Please enter valid start and end times.");
+    const handleSubmit = async () => {
+        const {errors: validationErrors, parsedStart, parsedEnd} =
+            validateIntramural(values);
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
             return;
         }
+
+        setErrors({});
+        await handleCreateGame(parsedStart!, parsedEnd!);
+    };
+
+    const handleCreateGame = async (parsedStart: string, parsedEnd: string) => {
+        const time = values.schedule[0];
+    
         values.name = `${values.team1} vs ${values.team2} ${values.sport}`;
     
         const gameId = values.name.toLowerCase().replace(/\s+/g, "-");
@@ -58,8 +67,8 @@ export default function CreateIntramuralScreen() {
         };
         console.log("Creating game with values:", updatedGame);
     
-        await IMService.createGame(updatedGame);
-        await IMService.regenerateMeetings(updatedGame);
+        await FitnessService.createGame(updatedGame);
+        await FitnessService.regenerateMeetings(updatedGame);
     
         router.push("/(tabs)/fitness");
     };
@@ -68,9 +77,9 @@ export default function CreateIntramuralScreen() {
         <IntramuralForm
             values={values}
             setValues={setValues}
-            onSubmit={handleCreateGame}
-            timeError={timeError}
+            onSubmit={handleSubmit}
             submitLabel="Create Game"
+            errors={errors}
         />
     );
 }

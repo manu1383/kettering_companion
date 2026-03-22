@@ -18,10 +18,10 @@ export interface Club extends Event{
 }
 
 export interface Event {
-    id?: string;
+    id: string;
     name: string;
     description?: string;
-    location?: string;
+    location: string;
     contactEmail?: string;
     schedule: MeetingTime[];
     attendees?: string[];

@@ -1,10 +1,11 @@
+import { FormErrors, validateEntity } from "@/lib/validateEntity";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    View
+  View
 } from "react-native";
 import ClubForm from "../../../components/ClubForm";
-import { parseTime, to12Hour } from "../../../lib/time";
+import { to12Hour } from "../../../lib/time";
 import { ClubService } from "../../../services/clubService";
 import { UserService } from "../../../services/userService";
 import { Club } from "../../../types/subscription";
@@ -14,7 +15,7 @@ export default function EditFitnessClassScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
-  const [timeError, setTimeError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [values, setValues] = useState<Club | null>(null);
 
   useEffect(() => {
@@ -40,13 +41,19 @@ export default function EditFitnessClassScreen() {
   const handleUpdateFitnessClass = async () => {
     if (!values) return;
     const time = values.schedule[0];
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+    
+    const {errors: validationErrors, parsedStart, parsedEnd} = 
+          validateEntity(values, "club");
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    if(!values.id) return
+
+    if (!parsedStart || !parsedEnd) { return; }
+
+    setErrors({});
+
     const updatedClub = {
       ...values,
       schedule: [
@@ -59,7 +66,6 @@ export default function EditFitnessClassScreen() {
     };
     await ClubService.updateFitnessClass(values.id, updatedClub);
     await ClubService.regenerateMeetings(updatedClub);
-    console.log(values.officers);
     const officerEmail = values.officers?.[0];
   
     if (officerEmail) {
@@ -84,16 +90,14 @@ export default function EditFitnessClassScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-
       <ClubForm
         values={values}
         setValues={setValues as React.Dispatch<React.SetStateAction<Club>>}
         onSubmit={handleUpdateFitnessClass}
         submitLabel="Update Fitness Class"
-        timeError={timeError}
+        errors={errors}
         onDelete={handleDeleteFitnessClass}
       />
-
     </View>
   );
 }

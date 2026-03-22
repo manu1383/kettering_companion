@@ -1,3 +1,4 @@
+import { FormErrors } from "@/lib/validateIntramural";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { Intramural, MeetingTime } from "../types/subscription";
@@ -7,11 +8,11 @@ type Props = {
     setValues: React.Dispatch<React.SetStateAction<Intramural>>;
     onSubmit: () => void;
     submitLabel: string;
-    timeError?: string | null;
+    errors?: FormErrors;
     onDelete?: () => void;
 };
 
-export default function IntramuralForm({ values, setValues, onSubmit, submitLabel, timeError, onDelete }: Props) {
+export default function IntramuralForm({ values, setValues, onSubmit, submitLabel, errors, onDelete }: Props) {
     const updateGame = (field: keyof Intramural, value: any) => {
         setValues(prev => ({
             ...prev,
@@ -91,7 +92,15 @@ export default function IntramuralForm({ values, setValues, onSubmit, submitLabe
                 onChangeText={(text) => updateGame("tourney", text)}
             />
 
-            {timeError && <Text style={{ color: "red", marginBottom: 10 }}>{timeError}</Text>}
+            {errors?.general && <Text style={styles.errorText}>{errors.general}</Text>}
+            {errors?.team1 && <Text style={styles.errorText}>{errors.team1}</Text>}
+            {errors?.team2 && <Text style={styles.errorText}>{errors.team2}</Text>}
+            {errors?.location && <Text style={styles.errorText}>{errors.location}</Text>}
+            {errors?.date && <Text style={styles.errorText}>{errors.date}</Text>}
+            {errors?.startTime && <Text style={styles.errorText}>{errors.startTime}</Text>}
+            {errors?.endTime && <Text style={styles.errorText}>{errors.endTime}</Text>}
+            {errors?.sport && <Text style={styles.errorText}>{errors.sport}</Text>}
+            {errors?.tourney && <Text style={styles.errorText}>{errors.tourney}</Text>}
 
             <TouchableOpacity style={styles.button} onPress={onSubmit}>
                 <Text style={{ color: "white" }}>{submitLabel}</Text>
@@ -109,8 +118,9 @@ export default function IntramuralForm({ values, setValues, onSubmit, submitLabe
 }
 
 const styles = StyleSheet.create({
-  container:{ flex:1, backgroundColor:"#E6F0F3", padding:20 },
-  input:{ backgroundColor:"#fff", borderRadius:12, padding:14, marginBottom:15 },
-  button:{ backgroundColor:"#4BA3C7", padding:14, borderRadius:14, alignItems:"center" },
-  label:{ fontWeight:"700", marginBottom:6 },
+    container:{ flex:1, backgroundColor:"#E6F0F3", padding:20 },
+    input:{ backgroundColor:"#fff", borderRadius:12, padding:14, marginBottom:15 },
+    button:{ backgroundColor:"#4BA3C7", padding:14, borderRadius:14, alignItems:"center" },
+    label:{ fontWeight:"700", marginBottom:6 },
+    errorText:{ color:"red", marginBottom:10 },
 });

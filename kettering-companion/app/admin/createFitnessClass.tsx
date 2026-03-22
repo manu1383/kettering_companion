@@ -1,7 +1,7 @@
+import { FormErrors, validateEntity } from "@/lib/validateEntity";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import ClubForm from "../../components/ClubForm";
-import { parseTime } from "../../lib/time";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club } from "../../types/subscription";
@@ -9,9 +9,11 @@ import { Club } from "../../types/subscription";
 export default function CreateFitnessClassScreen() {
 
   const router = useRouter();
+  const [errors, setErrors] = useState<FormErrors>({});
   const [timeError, setTimeError] = useState<string | null>(null);
 
   const [values, setValues] = useState<Club>({
+    id: "",
     name: "",
     description: "",
     location: "",
@@ -28,18 +30,22 @@ export default function CreateFitnessClassScreen() {
     ],
     officers: []
   });
+  
+  const handleSubmit = async () => {
+    const {errors: validationErrors, parsedStart, parsedEnd} = 
+      validateEntity(values, "fitness");
 
-  const handleCreateClub = async () => {
-
-    const time = values.schedule[0];
-
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
-
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
+
+    setErrors({});
+    await handleCreateClub(parsedStart!, parsedEnd!);
+  };
+
+  const handleCreateClub = async (parsedStart: string, parsedEnd: string) => {
+    const time = values.schedule[0];
 
     const id = values.name.toLowerCase().replace(/\s+/g, "-");
 
@@ -75,9 +81,9 @@ export default function CreateFitnessClassScreen() {
     <ClubForm
       values={values}
       setValues={setValues}
-      onSubmit={handleCreateClub}
+      onSubmit={handleSubmit}
       submitLabel="Create Fitness Class"
-      timeError={timeError}
+      errors={errors}
       isFitnessClass={true}
     />
   );

@@ -1,13 +1,13 @@
 import ClubForm from "@/components/ClubForm";
-import { parseTime } from "@/lib/time";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { FormErrors, validateEntity } from "../../lib/validateEntity";
 import { EventService } from "../../services/eventService";
 import { Event } from "../../types/subscription";
 
 export default function CreateEventScreen() {
   const router = useRouter();
-  const [timeError, setTimeError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [values, setValues] = useState<Event>({
     id: "",
@@ -28,18 +28,23 @@ export default function CreateEventScreen() {
     attendees: []
   });
 
-  const handleCreateEvent = async () => {
-    const time = values.schedule[0];
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
+  const handleSubmit = async () => {
+    const {errors: validationErrors, parsedStart, parsedEnd} = 
+      validateEntity(values, "event");
 
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    const eventId = values.name.toLowerCase().replace(/\s+/g, "-");
+    setErrors({});
+    await handleCreateEvent(parsedStart!, parsedEnd!);
+  };
 
+
+  const handleCreateEvent = async (parsedStart:string, parsedEnd:string) => {
+    const eventId = values.name.toLowerCase().replace(/\s+/g, "-");
+    const time = values.schedule[0];
     const updatedEvent = {
       ...values,
       id: eventId,
@@ -62,9 +67,9 @@ export default function CreateEventScreen() {
     <ClubForm
       values={values}
       setValues={setValues}
-      onSubmit={handleCreateEvent}
+      onSubmit={handleSubmit}
       submitLabel="Create Event"
-      timeError={timeError}
+      errors={errors}
       isEvent={true}
     />
   );

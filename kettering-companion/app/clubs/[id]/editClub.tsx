@@ -1,10 +1,9 @@
+import { FormErrors, validateEntity } from "@/lib/validateEntity";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  View
-} from "react-native";
+import { View } from "react-native";
 import ClubForm from "../../../components/ClubForm";
-import { parseTime, to12Hour } from "../../../lib/time";
+import { to12Hour } from "../../../lib/time";
 import { ClubService } from "../../../services/clubService";
 import { UserService } from "../../../services/userService";
 import { Club } from "../../../types/subscription";
@@ -14,11 +13,13 @@ export default function EditClubScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
+  const [errors, setErrors] = useState<FormErrors>({});
   const [timeError, setTimeError] = useState<string | null>(null);
   const [values, setValues] = useState<Club | null>(null);
 
+
   useEffect(() => {
-    const loadClub = async () => {
+    const loadClub = async () => {  
       const club = await ClubService.getClub(id as string);
       if (club && club.schedule?.length) {
         const time = club.schedule?.[0];
@@ -39,14 +40,21 @@ export default function EditClubScreen() {
 
   const handleUpdateClub = async () => {
     if (!values) return;
+
+    const {errors: validationErrors, parsedStart, parsedEnd} = 
+      validateEntity(values, "club");
+
     const time = values.schedule[0];
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    if(!values.id) return
+
+    if (!parsedStart || !parsedEnd) { return; }
+
+    setErrors({});
+
     const updatedClub = {
       ...values,
       schedule: [
@@ -57,9 +65,10 @@ export default function EditClubScreen() {
         }
       ]
     };
+
     await ClubService.updateClub(values.id, updatedClub);
     await ClubService.regenerateMeetings(updatedClub);
-    console.log(values.officers);
+
     const officerEmail = values.officers?.[0];
   
     if (officerEmail) {
@@ -90,7 +99,7 @@ export default function EditClubScreen() {
         setValues={setValues as React.Dispatch<React.SetStateAction<Club>>}
         onSubmit={handleUpdateClub}
         submitLabel="Update Club"
-        timeError={timeError}
+        errors={errors}
         onDelete={handleDeleteClub}
       />
 

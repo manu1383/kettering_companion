@@ -1,17 +1,18 @@
+import { FormErrors, validateEntity } from "@/lib/validateEntity";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import ClubForm from "../../components/ClubForm";
-import { parseTime } from "../../lib/time";
 import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club } from "../../types/subscription";
 
 export default function CreateClubScreen() {
-
   const router = useRouter();
-  const [timeError, setTimeError] = useState<string | null>(null);
+
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [values, setValues] = useState<Club>({
+    id: "",
     name: "",
     description: "",
     location: "",
@@ -29,23 +30,27 @@ export default function CreateClubScreen() {
     officers: []
   });
 
-  const handleCreateClub = async () => {
+  const handleSubmit = async () => {
+    const {errors: validationErrors, parsedStart, parsedEnd} = 
+      validateEntity(values, "club");
 
-    const time = values.schedule[0];
-
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
-
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
+    setErrors({});
+    await handleCreateClub(parsedStart!, parsedEnd!);
+  };
+
+  const handleCreateClub = async (parsedStart: string, parsedEnd: string) => {
     const id = values.name.toLowerCase().replace(/\s+/g, "-");
+    const time = values.schedule[0];
+
 
     const updatedClub = {
       ...values,
-      id: id,
+      id,
       schedule: [
         {
           ...time,
@@ -59,7 +64,7 @@ export default function CreateClubScreen() {
     await ClubService.regenerateMeetings(updatedClub);
 
     const officerEmail = values.officers?.[0] ?? "";
-    // Add officer permissions
+
     if (officerEmail) {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
@@ -75,9 +80,9 @@ export default function CreateClubScreen() {
     <ClubForm
       values={values}
       setValues={setValues}
-      onSubmit={handleCreateClub}
+      onSubmit={handleSubmit}
       submitLabel="Create Club"
-      timeError={timeError}
+      errors={errors}
     />
   );
 }
