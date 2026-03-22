@@ -1,5 +1,5 @@
-﻿import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+﻿import { useLocalSearchParams } from "expo-router";
+import { ChevronDown, ChevronUp, Star } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
     Pressable,
@@ -157,7 +157,7 @@ export default function MapScreen() {
                                                 ],
                                             }}
                                         >
-                                            <Ionicons name="star" size={32} color="red" />
+                                            <Star size={32} color="red" />
                                         </View>
                                     );
                                 })()}
@@ -207,7 +207,7 @@ export default function MapScreen() {
                                     setFloorIndex((f) => Math.max(f - 1, 0))
                                 }
                             >
-                                <Ionicons name="chevron-down" size={28} color={theme.arrow} />
+                                <ChevronDown size={28} color={theme.arrow} />
                             </Pressable>
 
                             <Text>Floor {floor.level}</Text>
@@ -220,7 +220,7 @@ export default function MapScreen() {
                                     )
                                 }
                             >
-                                <Ionicons name="chevron-up" size={28} color={theme.arrow} />
+                                <ChevronUp size={28} color={theme.arrow} />
                             </Pressable>
                         </View>
                     </View>
