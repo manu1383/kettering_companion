@@ -1,24 +1,26 @@
-﻿import { formatFrequency, getPluralWeekday, to12Hour } from '../../lib/time';
-import { Feather } from '@expo/vector-icons';
+﻿import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from "../../constants/theme";
 import { AuthContext } from '../../context/AuthProvider';
+import { formatFrequency, getPluralWeekday, to12Hour } from '../../lib/time';
 import { ClubService } from '../../services/clubService';
 import { Club } from '../../types/subscription';
-import { useTheme } from "../../constants/theme";
 
 export default function ClubsScreen() {
     const colors = useTheme();
+    // State variables
     const [clubs, setClubs] = useState<Club[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    const { user, role, subscribedClubs } = useContext(AuthContext);
+    const { user, role } = useContext(AuthContext);
     const [showingSubscribed, setShowingSubscribed] = useState(false);
     const [subscriptions, setSubscriptions] = useState<string[]>([]);
 
+    // Fetch clubs and user subscriptions on screen focus
     useFocusEffect(
         useCallback(() => {
             const fetchClubs = async () => {
@@ -34,6 +36,7 @@ export default function ClubsScreen() {
         }, [])
     );
 
+    // Filter clubs based on search and subscription status
     const filteredClubs = clubs.filter((club) => {
         const matchesSearch = club.name.toLowerCase().includes(search.toLowerCase());
         
@@ -44,24 +47,31 @@ export default function ClubsScreen() {
         return matchesSearch;
     });
 
+    // Render individual club card
     const renderClub = ({ item }: { item: Club }) => {
         const scheduleText = item.schedule
-        ?.map((m) => {
-            if (
-                m.weekday === undefined ||
-                m.frequency === undefined ||
-                !m.startTime ||
-                !m.endTime
-            ) {
-                return null;
-            }
+            ?.map((m) => {
+                if (
+                    m.weekdays === undefined ||
+                    m.frequency === undefined ||
+                    !m.startTime ||
+                    !m.endTime
+                ) {
+                    return null;
+                } else {
+                    const days = (m.weekdays || [])
+                        .map((d) => getPluralWeekday(d))
+                        .join(", ");
+                    return `${days} • Repeats ${formatFrequency(m.frequency ?? "")} • ${
+                        to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+                }
 
-            return `${getPluralWeekday(m.weekday)} • ${formatFrequency(m.frequency)} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+            
         })
         .filter((text): text is string => text !== null)
         .join(" • ");
         
-        
+        // Determine if user can manage the club (admin or officer)
         const isOfficer = item.officers?.includes(user?.uid ?? "");
         const canManage = role === "admin" || isOfficer;
 
@@ -131,6 +141,7 @@ export default function ClubsScreen() {
     }
 
     return (
+        // Main container
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Text style={[styles.header, { color: colors.text }]}>
                 Clubs
@@ -243,22 +254,10 @@ const styles = StyleSheet.create({
     schedule: {
         fontWeight: "600",
     },
-    subscribeButton: {
-        backgroundColor: "#4BA3C7",
-        paddingVertical: 12,
-        borderRadius: 14,
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    subscribeButtonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "700",
-    },
     filterContainer: {
-    flexDirection: "row",
-    marginBottom: 16,
-    gap: 10,
+        flexDirection: "row",
+        marginBottom: 16,
+        gap: 10,
     },
     filterButton: {
         flex: 1,

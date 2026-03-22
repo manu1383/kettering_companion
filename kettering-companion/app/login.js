@@ -31,28 +31,25 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const { setUser } = useContext(AuthContext);
   const router = useRouter();
-
+  // Form state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-
   const [verificationId, setVerificationId] = useState('');
   const [resolver, setResolver] = useState(null);
-
   const [forceEnroll, setForceEnroll] = useState(false);
   const [is2FALogin, setIs2FALogin] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  // reCAPTCHA reference for Web
   const recaptchaRef = useRef(null);
-
+  // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const formAnim = useRef(new Animated.Value(0)).current;
-
+  // Animate logo and form on mount
   useEffect(() => {
     Animated.sequence([
       Animated.timing(fadeAnim, {
@@ -80,49 +77,39 @@ export default function AuthScreen() {
       recaptchaRef.current.render();
     }
   }, []);
-
+  // Handle Login and Signup
   const handleAuth = async () => {
     if (!email || !password) {
       setError('Please enter both email and password.');
       return;
     }
-
     if (!isLogin && password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
-
       if (isLogin) {
-
         const userCredential =
           await signInWithEmailAndPassword(auth, email, password);
-
         await userCredential.user.reload();
-
         if (!userCredential.user.emailVerified) {
           setError("Please verify your email before logging in.");
           return;
         }
-
         // Force SMS enrollment if none exists
         if (multiFactor(userCredential.user).enrolledFactors.length === 0) {
           setUser(userCredential.user);
           setForceEnroll(true);
           return;
         }
-
         setUser(userCredential.user);
         router.replace('/(tabs)/mainCalendar');
-
       } else {
-
+        // Create user account
         const userCredential =
           await createUserWithEmailAndPassword(auth, email, password);
-
         try {
           await setDoc(doc(db, "users", userCredential.user.uid), {
             name: fullName,
@@ -131,28 +118,22 @@ export default function AuthScreen() {
             clubsManaging: [],
             createdAt: serverTimestamp(),
           });
-
           console.log("User document created successfully");
         } catch (err) {
           console.error("Failed to create user document:", err);
         }
-        
+        // Send email verification
         await sendEmailVerification(userCredential.user);
-
         alert("Verification email sent. Please verify before logging in.");
       }
 
     } catch (error) {
-
+      // Handle 2FA requirement on login
       if (error.code === "auth/multi-factor-auth-required") {
-
         const multiFactorResolver =
           getMultiFactorResolver(auth, error);
-
         setResolver(multiFactorResolver);
-
         const phoneAuthProvider = new PhoneAuthProvider(auth);
-
         const id =
           await phoneAuthProvider.verifyPhoneNumber(
             {
@@ -161,14 +142,11 @@ export default function AuthScreen() {
             },
             recaptchaRef.current
           );
-
         setVerificationId(id);
         setIs2FALogin(true);
-
       } else {
         setError(error.message);
       }
-
     } finally {
       setLoading(false);
     }
@@ -176,63 +154,69 @@ export default function AuthScreen() {
 
   // Start Enrollment
   const handleEnroll = async () => {
-
     const session =
       await multiFactor(auth.currentUser).getSession();
-
     const phoneAuthProvider = new PhoneAuthProvider(auth);
-
     const id =
       await phoneAuthProvider.verifyPhoneNumber(
         { phoneNumber, session },
         recaptchaRef.current
       );
-
     setVerificationId(id);
   };
 
   // Confirm Enrollment
   const confirmEnrollment = async () => {
-
     const credential =
       PhoneAuthProvider.credential(verificationId, verificationCode);
-
     const assertion =
       PhoneMultiFactorGenerator.assertion(credential);
-
     await multiFactor(auth.currentUser).enroll(
       assertion,
       "Primary Phone"
     );
-
     router.replace('/(tabs)/mainCalendar');
   };
 
   // Verify Login Challenge
   const handleVerifyLogin2FA = async () => {
-
     const credential =
       PhoneAuthProvider.credential(verificationId, verificationCode);
-
     const assertion =
       PhoneMultiFactorGenerator.assertion(credential);
-
-    await resolver.resolveSignIn(assertion);
+    try {
+      await resolver.resolveSignIn(assertion);
+    } catch (error){
+      // Handle common 2FA errors
+      if (error.code === "auth/invalid-verification-code") {
+        setError("Invalid verification code. Please try again.");
+        return;
+      } else if (error.code === "auth/code-expired") {
+        setError("Verification code has expired. Please request a new one.");
+        return;
+      } else if (error.code === "auth/missing-code") {
+        setError("Please enter the verification code sent to your phone.");
+        return;
+      } else {
+        setError(error.message);
+        return;
+      }
+    }
 
     setUser(auth.currentUser);
     router.replace('/(tabs)/mainCalendar');
   };
 
+  // Handle password reset
   const handleForgotPassword = async () => {
     if (!email) {
       alert('Please enter your email to reset password.');
       return;
     }
-
     await sendPasswordResetEmail(auth, email);
     alert('Password reset email sent!');
   };
-
+  // Main render
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -318,7 +302,6 @@ export default function AuthScreen() {
                 />
               </>
             )}
-            {error ? (<text style={styles.errorText}>{error}</text>) : null}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -355,6 +338,8 @@ export default function AuthScreen() {
               placeholderTextColor="#888"
             />
 
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
             <TouchableOpacity style={styles.button} onPress={confirmEnrollment}>
               <Text style={styles.buttonText}>Confirm 2FA</Text>
             </TouchableOpacity>
@@ -372,6 +357,7 @@ export default function AuthScreen() {
               placeholder="123456"
               placeholderTextColor="#888"
             />
+            {error && <Text style={styles.errorText}>{error}</Text>}
             <TouchableOpacity style={styles.button} onPress={handleVerifyLogin2FA}>
               <Text style={styles.buttonText}>Verify Code</Text>
             </TouchableOpacity>
@@ -391,106 +377,95 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#E6F0F3",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 20,
-    },
-    logoContainer: {
-        alignItems: "center",
-        marginBottom: 40,
-    },
-    logo: {
-        width: 80,
-        height: 80,
-        marginBottom: 12,
-    },
-    appName: {
-        fontSize: 32,
-        fontWeight: "700",
-        color: "#1D3D47",
-        textAlign: "center",
-    },
-    form: {
-        width: "100%",
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 25,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
-    },
-    tabContainer: {
-        flexDirection: "row",
-        marginBottom: 20,
-        backgroundColor: "#E6F0F3",
-        borderRadius: 12,
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: 10,
-        alignItems: "center",
-        borderRadius: 12,
-    },
-    activeTab: {
-        backgroundColor: "#4BA3C7",
-    },
-    tabText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#1D3D47",
-    },
-    activeTabText: {
-        color: "#fff",
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#1D3D47",
-        marginBottom: 6,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 10,
-        padding: 12,
-        marginBottom: 16,
-        fontSize: 16,
-        color: "#1D3D47",
-    },
-    button: {
-        backgroundColor: "#4BA3C7",
-        borderRadius: 12,
-        paddingVertical: 14,
-        alignItems: "center",
-        marginTop: 5,
-    },
-    buttonText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "700",
-    },
-    footer: {
-        marginTop: 20,
-        fontSize: 14,
-        color: "#555",
-        textAlign: "center",
-    },
-    errorText: {
-        fontFamily: 'arial',
-        color: '#D64545',
-        marginBottom: 12,
-        fontSize: 14,
-        textAlign: 'center',
-    },
-    forgotPasswordText: {
-        color: "#4BA3C7",
-        fontWeight: "600",
-        textAlign: "right",
-        marginBottom: 15,
-        marginTop: 15,}
+  container: {
+      flex: 1,
+      backgroundColor: "#E6F0F3",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 20,
+  },
+  logoContainer: {
+      alignItems: "center",
+      marginBottom: 40,
+  },
+  appName: {
+      fontSize: 32,
+      fontWeight: "700",
+      color: "#1D3D47",
+      textAlign: "center",
+  },
+  form: {
+      width: "100%",
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      padding: 25,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 5 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 5,
+  },
+  tabContainer: {
+      flexDirection: "row",
+      marginBottom: 20,
+      backgroundColor: "#E6F0F3",
+      borderRadius: 12,
+  },
+  tab: {
+      flex: 1,
+      paddingVertical: 10,
+      alignItems: "center",
+      borderRadius: 12,
+  },
+  activeTab: {
+      backgroundColor: "#4BA3C7",
+  },
+  tabText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#1D3D47",
+  },
+  activeTabText: {
+      color: "#fff",
+  },
+  label: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#1D3D47",
+      marginBottom: 6,
+  },
+  input: {
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 16,
+      fontSize: 16,
+      color: "#1D3D47",
+  },
+  button: {
+      backgroundColor: "#4BA3C7",
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginTop: 5,
+  },
+  buttonText: {
+      color: "#fff",
+      fontSize: 18,
+      fontWeight: "700",
+  },
+  errorText: {
+      fontFamily: 'arial',
+      color: '#D64545',
+      marginBottom: 12,
+      fontSize: 14,
+      textAlign: 'center',
+  },
+  forgotPasswordText: {
+      color: "#4BA3C7",
+      fontWeight: "600",
+      textAlign: "right",
+      marginBottom: 15,
+      marginTop: 15,}
 });

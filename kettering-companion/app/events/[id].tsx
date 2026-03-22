@@ -1,6 +1,6 @@
 import { AuthContext } from "@/context/AuthProvider";
 import { copyCalendar } from "@/lib/copyCalendar";
-import { getWeekdayName, to12Hour } from "@/lib/time";
+import { formatDate, to12Hour } from "@/lib/time";
 import { useLocalSearchParams } from "expo-router";
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
@@ -16,21 +16,16 @@ import { db } from "../../lib/firebase";
 import { EventService } from "../../services/eventService";
 import { Event } from "../../types/subscription";
 
-/* =============================
-   Component
-============================= */
-
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
-
+  // State variables
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
-
+  // Fetch event details on component mount
   useEffect(() => {
-
     const fetchEvent = async () => {
       const eventData = await EventService.getEvent(id as string);
       if (!eventData) return;
@@ -40,7 +35,7 @@ export default function EventDetailScreen() {
     fetchEvent();
 
   }, [id]);
-
+  // Check subscription status on component mount
   useEffect(() => {
     const checkSubscription = async () => {
       if (!user || !event) return;
@@ -70,7 +65,7 @@ export default function EventDetailScreen() {
       </View>
     );
   }
-
+  // Handle event subscription
   const handleSubscribe = async () => {
     if (!event || !user) return;
 
@@ -78,7 +73,7 @@ export default function EventDetailScreen() {
       console.error("Event ID is undefined");
       return;
     }
-
+    // Add subscription document for the user
     const subRef = doc(db, "users", user.uid, "subscriptions", event.id);
 
     await setDoc(subRef, {
@@ -92,11 +87,11 @@ export default function EventDetailScreen() {
       new Date().getFullYear() +
       "-" +
       String(new Date().getMonth() + 1).padStart(2, "0");
-    
+    // Copy calendar to update with new subscription
     await copyCalendar(user.uid, month);
     alert("Meeting added to calendar!");
   };
-
+  // Handle event unsubscription
   const handleUnsubscribe = async () => {
     if (!event || !user) return;
     if(!event?.id){
@@ -107,14 +102,14 @@ export default function EventDetailScreen() {
     const eventId = event.id;
 
     const subRef = doc(db, "users", uid, "subscriptions", eventId);
-  
+    // Remove subscription document for the user
     await deleteDoc(subRef);
 
     const month = 
       new Date().getFullYear() +
       "-" +
       String(new Date().getMonth() + 1).padStart(2, "0");
-
+    // Copy calendar to update with removed subscription
     await copyCalendar(uid, month);
     
     alert("Meeting removed from calendar!");
@@ -133,7 +128,7 @@ export default function EventDetailScreen() {
           <Text style={styles.sectionTitle}>Event Time: </Text>
           {event.schedule.map((m, i) => (
             <Text key={i} style={styles.schedule}>
-              {m.weekday !== undefined && getWeekdayName(m.weekday)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
+              {formatDate(m.startDate)} • {to12Hour(m.startTime)} - {to12Hour(m.endTime)}
             </Text>
           ))}
         </>
@@ -169,10 +164,6 @@ export default function EventDetailScreen() {
   );
 }
 
-/* =============================
-   Styles
-============================= */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -207,9 +198,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   schedule: {
-      color: "#4BA3C7",
-      fontWeight: "600",
-      marginBottom: 4,
+    color: "#4BA3C7",
+    fontWeight: "600",
+    marginBottom: 4,
   },
   calendarButton: {
     backgroundColor: "#4BA3C7",

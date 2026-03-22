@@ -6,10 +6,9 @@ import { ClubService } from "../../services/clubService";
 import { UserService } from "../../services/userService";
 import { Club } from "../../types/subscription";
 
-export default function CreateClubScreen() {
+export default function CreateFitnessClassScreen() {
   // Router for navigation
   const router = useRouter();
-  // State for form errors
   const [errors, setErrors] = useState<FormErrors>({});
   // State for form values
   const [values, setValues] = useState<Club>({
@@ -30,11 +29,10 @@ export default function CreateClubScreen() {
     ],
     officers: []
   });
-
   // Handle form submission
   const handleSubmit = async () => {
     const {errors: validationErrors, parsedStart, parsedEnd} = 
-      validateEntity(values, "club");
+      validateEntity(values, "fitness");
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -42,18 +40,18 @@ export default function CreateClubScreen() {
     }
 
     setErrors({});
-    await handleCreateClub(parsedStart!, parsedEnd!);
+    await handleCreateFitnessClass(parsedStart!, parsedEnd!);
   };
 
-  // Create club and handle officer assignment
-  const handleCreateClub = async (parsedStart: string, parsedEnd: string) => {
-    const id = values.name.toLowerCase().replace(/\s+/g, "-");
+  // Create fitness class and handle officer assignment
+  const handleCreateFitnessClass = async (parsedStart: string, parsedEnd: string) => {
     const time = values.schedule[0];
 
+    const id = values.name.toLowerCase().replace(/\s+/g, "-");
 
     const updatedClub = {
       ...values,
-      id,
+      id: id,
       schedule: [
         {
           ...time,
@@ -63,30 +61,31 @@ export default function CreateClubScreen() {
       ]
     };
 
-    await ClubService.createClub(updatedClub);
+    await ClubService.createFitnessClass(updatedClub);
     await ClubService.regenerateMeetings(updatedClub);
 
     const officerEmail = values.officers?.[0] ?? "";
-
+    // Add officer permissions
     if (officerEmail) {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
       if (userDoc) {
-        await ClubService.addOfficer(id, userDoc.id);
+        await ClubService.addFitnessInstructor(id, userDoc.id);
       }
     }
 
-    router.push("/(tabs)/clubs");
+    router.push("/(tabs)/fitness");
   };
-  
-  // Render the club form with current values, errors, and submit handler
+
+  // Render the fitness class form with appropriate props
   return (
     <ClubForm
       values={values}
       setValues={setValues}
       onSubmit={handleSubmit}
-      submitLabel="Create Club"
+      submitLabel="Create Fitness Class"
       errors={errors}
+      isFitnessClass={true}
     />
   );
 }

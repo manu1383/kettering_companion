@@ -1,26 +1,26 @@
 import IntramuralForm from "@/components/IntramuralForm";
-import { parseTime, to12Hour } from "@/lib/time";
+import { to12Hour } from "@/lib/time";
+import { FormErrors } from "@/lib/validateEntity";
+import { validateIntramural } from "@/lib/validateIntramural";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import {
-    View
-} from "react-native";
+import { View } from "react-native";
 import { db } from "../../../lib/firebase";
-import { IMService } from "../../../services/imService";
+import { FitnessService } from "../../../services/fitnessService";
 import { Intramural } from "../../../types/subscription";
 
 
 export default function EditEventScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-
-  const [timeError, setTimeError] = useState<string | null>(null);
+  // State for form errors and values
+  const [errors, setErrors] = useState<FormErrors>({});
   const [values, setValues] = useState<Intramural | null>(null);
-
+  // Load game data on component mount
   useEffect(() => {
     const loadGame = async () => {
-      const game = await IMService.getGame(id as string);
+      const game = await FitnessService.getGame(id as string);
       if (game && game.schedule?.length) {
         const time = game.schedule?.[0];
         setValues({
@@ -40,14 +40,20 @@ export default function EditEventScreen() {
 
   const handleUpdateGame = async () => {
     if (!values) return;
-    const time = values.schedule[0];
-    const parsedStart = parseTime(time.startTime);
-    const parsedEnd = parseTime(time.endTime);
-    if (!parsedStart || !parsedEnd) {
-      setTimeError("Please enter valid start and end times.");
+    // Validate form values
+    const {errors: validationErrors, parsedStart, parsedEnd} =
+      validateIntramural(values);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    if(!values.id) return
+
+    setErrors({});
+
+    const time = values.schedule[0];
+    if (!parsedStart || !parsedEnd) { return; }
+
     const updatedGame = {
       ...values,
       schedule: [
@@ -58,12 +64,12 @@ export default function EditEventScreen() {
         }
       ]
     };
-    await IMService.updateGame(values.id, updatedGame);
-    await IMService.regenerateMeetings(updatedGame);
+    await FitnessService.updateGame(values.id, updatedGame);
+    await FitnessService.regenerateMeetings(updatedGame);
 
     router.push("/(tabs)/fitness");
   };
-
+  // Handle game deletion
   const handleDeleteGame = async () => {
     const gameId = id as string;
 
@@ -83,19 +89,17 @@ export default function EditEventScreen() {
   };
 
   if(!values) return null;
-
+  // Show form with loaded game data
   return (
     <View style={{ flex: 1 }}>
-    
       <IntramuralForm
         values={values}
         setValues={setValues as React.Dispatch<React.SetStateAction<Intramural>>}
         onSubmit={handleUpdateGame}
         submitLabel="Update Game"
-        timeError={timeError}
+        errors={errors}
         onDelete={handleDeleteGame}
       />
-
     </View>
   );
 }

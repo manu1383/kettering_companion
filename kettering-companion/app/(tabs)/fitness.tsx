@@ -1,34 +1,39 @@
-﻿import { formatDate, to12Hour } from '../../lib/time';
+﻿import { formatDate, formatFrequency, getPluralWeekday, to12Hour } from '@/lib/time';
+import { ClubService } from '@/services/clubService';
 import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { AuthContext } from '../../context/AuthProvider';
-import { IMService } from '../../services/imService';
-import { Intramural } from '../../types/subscription';
 import { useTheme } from "../../constants/theme";
+import { AuthContext } from '../../context/AuthProvider';
+import { FitnessService } from '../../services/fitnessService';
+import { Club, Intramural } from '../../types/subscription';
 
 export default function FitnessScreen() {
+    // State variables
+    const [view, setView] = useState<"fitness" | "intramurals">("intramurals");
     const colors = useTheme();
     const { role } = useContext(AuthContext);
     const router = useRouter();
     const [games, setGames] = useState<Intramural[]>([]);
     const [filteredGames, setFilteredGames] = useState<Intramural[]>([]);
+    const [classes, setClasses] = useState<Club[]>([]);
+    const [filteredClasses, setFilteredClasses] = useState<Club[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    // Filter states (for intramurals)
     const [filters, setFilters] = useState({
         sport: "",
         tourney: "",
         team: "",
         date: null,
     });
-
+    // Fetch intramurals on screen focus
     useEffect(() => {
         const fetchGames = async () => {
-            const data = await IMService.getAllGames();
+            const data = await FitnessService.getAllGames();
             data.sort((a, b) => {
                 const aStart = a.schedule?.[0];
                 const bStart = b.schedule?.[0];
@@ -46,7 +51,7 @@ export default function FitnessScreen() {
         };
         fetchGames();
     }, []);
-
+    // Filter intramurals when filters change
     useEffect(() => {
         const filtered = games.filter(game => {
             const firstMatch = game.schedule?.[0];
@@ -81,11 +86,28 @@ export default function FitnessScreen() {
         });
         setFilteredGames(filtered);
     }, [filters, games]);
-
+    // Fetch fitness classes on screen focus
+    useEffect(() => {
+        const fetchClasses = async () => {
+            const data = await ClubService.getAllFitnessClasses();
+            setClasses(data);
+            setFilteredClasses(data);
+        };
+        fetchClasses();
+    }, []);
+    // Filter fitness classes when search changes
+    useEffect(() => {
+        const filtered = classes.filter(c => 
+            c.name.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredClasses(filtered);
+    }, [search, classes]);
+    // Extract unique sports, tourneys, and teams for filter dropdowns
     const sports = [...new Set(games.map(g => g.sport))].filter(Boolean);
     const tourneys = [...new Set(games.map(g => g.tourney))].filter(Boolean);
     const teams = [...new Set(games.flatMap(g => [g.team1, g.team2]))].filter(Boolean);
-
+    
+    // Render intramural games
     const renderGame = ({ item }: { item: Intramural }) => {
         const scheduleText =
             item.schedule
@@ -138,6 +160,48 @@ export default function FitnessScreen() {
             </TouchableOpacity>
         );
     };
+    // Render fitness classes
+    const renderClass = ({ item }: { item: Club }) => {
+        const scheduleText = item.schedule?.map((m) => {
+            const days = (m.weekdays || [])
+                .map((d) => getPluralWeekday(d))
+                .join(", ");
+
+            return `${days} • ${formatFrequency(m.frequency ?? "")} • ${to12Hour(m.startTime)} - ${to12Hour(m.endTime)}`;
+        });
+
+        const canManage = role === "admin";
+        return (
+        <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+            router.push({
+                pathname: "/fitnessClasses/[id]",
+                params: { id: item.id! },
+            })
+            }
+        >
+            <Text style={styles.name}>{item.name}</Text>
+
+            <Text style={styles.schedule}>
+                {[scheduleText, item.location].filter(Boolean).join(" • ")}
+            </Text>
+            {canManage && 
+                <TouchableOpacity
+                    style={{ position: "absolute", right: 12, top: "50%", transform: [{ translateY: -10 }] }}
+                    onPress={() =>
+                        router.push({
+                            pathname: "/fitnessClasses/[id]/editClass",
+                            params: { id: item.id! },
+                        })
+                    }
+                >
+                    <Feather name="edit-2" size={20} color="#4BA3C7" />
+                </TouchableOpacity>
+            }
+        </TouchableOpacity>
+        );
+    };
 
     if (loading) {
         return (
@@ -154,90 +218,150 @@ export default function FitnessScreen() {
             </View>
         );
     }
-
+    // If no classes or games found, show empty state
+    // Show either intramurals or fitness classes based on selected view
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Text style={[styles.header, { color: colors.text }]}>
-                Intramurals
+                {view === "intramurals" ? "Intramurals" : "Fitness Classes"}
             </Text>
 
-            <TextInput
-                placeholder="Search intramurals..."
-                value={search}
-                onChangeText={setSearch}
-                style={[
-                    styles.search,
-                    { backgroundColor: colors.card, color: colors.text }
-                ]}
-                placeholderTextColor="#888"
-            />
-
-            <View style={styles.pickerWrapper}>
-                <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
-                    <Picker
-                        selectedValue={filters.sport}
-                        onValueChange={(value) =>
-                            setFilters((prev) => ({ ...prev, sport: value }))
-                        }
-                    >
-                        <Picker.Item label="All Sports" value="" />
-                        {sports.map((s) => (
-                            <Picker.Item key={s} label={s} value={s} />
-                        ))}
-                    </Picker>
-                </View>
-
-                <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
-                    <Picker
-                        selectedValue={filters.tourney}
-                        onValueChange={(value) =>
-                            setFilters((prev) => ({ ...prev, tourney: value }))
-                        }
-                    >
-                        <Picker.Item label="All Tourneys" value="" />
-                        {tourneys.map((t) => (
-                            <Picker.Item key={t} label={t} value={t} />
-                        ))}
-                    </Picker>
-                </View>
-
-                <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
-                    <Picker
-                        selectedValue={filters.team}
-                        onValueChange={(value) =>
-                            setFilters((prev) => ({ ...prev, team: value }))
-                        }
-                    >
-                        <Picker.Item label="All Teams" value="" />
-                        {teams.map((t) => (
-                            <Picker.Item key={t} label={t} value={t} />
-                        ))}
-                    </Picker>
-                </View>
-            </View>
-
-            {role === "admin" && (
+            <View style={styles.toggleContainer}>
                 <TouchableOpacity
-                    style={[styles.createButton, { backgroundColor: colors.accent }]}
-                    onPress={() => router.push("/admin/createIntramural")}
+                    style={[
+                        styles.toggleButton,
+                        view === "intramurals" && styles.activeToggle
+                    ]}
+                    onPress={() => setView("intramurals")}
                 >
-                    <Text style={styles.createButtonText}>
-                        + Create Intramural
+                    <Text
+                        style={[
+                            styles.toggleText,
+                            view === "intramurals" && styles.activeText
+                        ]}
+                        >
+                        Intramurals
                     </Text>
                 </TouchableOpacity>
-            )}
 
-            <FlatList
-                data={filteredGames}
-                renderItem={renderGame}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <Text style={[styles.emptyText, { color: colors.text }]}>
-                        No intramurals found.
+                <TouchableOpacity
+                    style={[
+                    styles.toggleButton,
+                    view === "fitness" && styles.activeToggle
+                    ]}
+                    onPress={() => setView("fitness")}
+                >
+                    <Text
+                        style={[
+                            styles.toggleText,
+                            view === "fitness" && styles.activeText
+                        ]}
+                    >
+                        Fitness Classes
                     </Text>
-                }
-            />
+                </TouchableOpacity>
+            </View>
+
+            {view === "intramurals" ? (
+            
+                <><TextInput
+                    placeholder="Search intramurals..."
+                    value={search}
+                    onChangeText={setSearch}
+                    style={[styles.search, { backgroundColor: colors.card, color: colors.text }]}
+                    placeholderTextColor="#888"
+                />
+                <View style={styles.pickerWrapper}>
+                    <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
+                        <Picker
+                            selectedValue={filters.sport}
+                            onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, sport: value }))
+                            }
+                        >
+                            <Picker.Item label="All Sports" value="" />
+                            {sports.map((s) => (
+                            <Picker.Item key={s} label={s} value={s} />
+                            ))}
+                        </Picker>
+                    </View>
+
+                    <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
+                        <Picker
+                            selectedValue={filters.tourney}
+                            onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, tourney: value }))
+                            }
+                        >
+                            <Picker.Item label="All Tourneys" value="" />
+                                {tourneys.map((t) => (
+                            <Picker.Item key={t} label={t} value={t} />
+                            ))}
+                        </Picker>
+                    </View>
+
+                    <View style={[styles.smallPicker, { backgroundColor: colors.card }]}>
+                        <Picker
+                            selectedValue={filters.team}
+                            onValueChange={(value) =>
+                            setFilters((prev) => ({ ...prev, team: value }))
+                            }
+                        >
+                            <Picker.Item label="All Teams" value="" />
+                            {teams.map((t) => (
+                            <Picker.Item key={t} label={t} value={t} />
+                            ))}
+                        </Picker>
+                    </View>
+                </View>
+
+                {role === "admin" && (
+                    <TouchableOpacity
+                        style={[styles.createButton, { backgroundColor: colors.accent }]}
+                        onPress={() => router.push("/admin/createIntramural")}
+                    >
+                        <Text style={styles.createButtonText}>
+                            + Create Intramural
+                        </Text>
+                    </TouchableOpacity>
+                )}
+
+                <FlatList
+                    data={filteredGames}
+                    renderItem={renderGame}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                    <Text style={[styles.emptyText, { color: colors.text }]}>No intramurals found.</Text>
+                    }
+                /></> 
+            ) : (
+                <><TextInput
+                    placeholder="Search fitness classes..."
+                    value={search}
+                    onChangeText={setSearch}
+                    style={[styles.search, { backgroundColor: colors.card, color: colors.text }]}
+                    placeholderTextColor="#888"
+                />
+                {role === "admin" && (
+                    <TouchableOpacity
+                        style={[styles.createButton, { backgroundColor: colors.accent }]}
+                        onPress={() => router.push("/admin/createFitnessClass")}
+                    >
+                        <Text style={styles.createButtonText}>+ Create Fitness Class</Text>
+                    </TouchableOpacity>
+                )}
+
+                <FlatList
+                    data={filteredClasses}
+                    renderItem={renderClass}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                    <Text style={[styles.emptyText, { color: colors.text }]}>No fitness classes found.</Text>
+                    }
+                /></>
+            )}
         </View>
+
     );
 }
 
@@ -277,11 +401,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
-    description: {
-        fontSize: 14,
-        color: "#555",
-        marginBottom: 10,
-    },
     emptyText: {
         textAlign: "center",
         marginTop: 40,
@@ -317,5 +436,27 @@ const styles = StyleSheet.create({
         width: "30%",
         backgroundColor: "#eee",
         borderRadius: 5,
+    },
+    toggleContainer: {
+        flexDirection: "row",
+        backgroundColor: "#d9e6eb",
+        borderRadius: 12,
+        marginBottom: 15,
+        overflow: "hidden",
+    },
+    toggleButton: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: "center",
+    },
+    activeToggle: {
+        backgroundColor: "#4BA3C7",
+    },
+    toggleText: {
+        fontWeight: "600",
+        color: "#1D3D47",
+    },
+    activeText: {
+        color: "#fff",
     },
 });

@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { HapticTab } from '../../components/haptic-tab';
-import { requestNotificationPermissions } from '../../services/notifications';
 import { useTheme } from "../../constants/theme";
+import { requestNotificationPermissions } from '../../services/notifications';
 
 export default function TabLayout() {
   const colors = useTheme();
@@ -17,6 +16,7 @@ export default function TabLayout() {
   return (
     <Tabs
           screenOptions={{
+              headerShown: false,
               tabBarStyle: {
                   backgroundColor: colors.background,
               },
@@ -25,19 +25,19 @@ export default function TabLayout() {
           }}
       >
       <Tabs.Screen
-              name="mainCalendar"
-              options={{
-                  title: 'Main Calendar',
-                  tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
-              }}
-          />
+        name="mainCalendar"
+        options={{
+            title: 'Main Calendar',
+            tabBarIcon: ({ color }) => <Ionicons name="calendar" size={28} color={color} />,
+        }}
+      />
       <Tabs.Screen
-              name="maps"
-              options={{
-                  title: 'Maps',
-                  tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
-              }}
-          />
+        name="maps"
+        options={{
+            title: 'Maps',
+            tabBarIcon: ({ color }) => <Ionicons name="map" size={28} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="fitness"
         options={{

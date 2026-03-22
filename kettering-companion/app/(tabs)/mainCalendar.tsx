@@ -1,21 +1,20 @@
 ﻿import { AuthContext } from "@/context/AuthProvider";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { copyCalendar } from "@/lib/copyCalendar";
+import { requestNotificationPermissions, scheduleEventNotification } from "@/services/notifications";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
-import { requestNotificationPermissions, scheduleEventNotification } from "@/services/notifications";
-import { MiniMap } from "./maps/MiniMap";
 import { useTheme } from "../../constants/theme";
+import { MiniMap } from "../maps/MiniMap";
 
 
 WebBrowser.maybeCompleteAuthSession();
@@ -38,7 +37,6 @@ export default function DaySchedule() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [infoVisible, setInfoVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { user } = useContext(AuthContext);
@@ -370,15 +368,15 @@ export default function DaySchedule() {
         const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
         return (
-            <View style={{ padding: 10, alignItems: "center" }}>
+            <View style={{ padding: 60 }}>
 
                 {/* Weekday headers */}
                 <View style={{ flexDirection: "row", marginBottom: 5 }}>
                     {WEEK_DAYS.map(day => (
+                        <View key ={day} style={{flex:1}}>
                         <Text
                             key={day}
                             style={{
-                                width: "14.2%",
                                 textAlign: "center",
                                 fontWeight: "600",
                                 color: "#888",
@@ -386,6 +384,7 @@ export default function DaySchedule() {
                         >
                             {day}
                         </Text>
+                        </View>
                     ))}
                 </View>
 
@@ -477,40 +476,48 @@ export default function DaySchedule() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-       <View style={styles.headerRow}>
-         <TouchableOpacity onPress={goToPrevious}>
-                <Text style={[styles.arrow, { color: colors.text }]}>◀</Text>
-         </TouchableOpacity>
-         <View style={{ flexDirection: "row", gap: 8 }}>
-               <TouchableOpacity onPress={() => setViewMode("day")}>
-                   <Text style={{ color: viewMode === "day" ? "#007AFF" : "#888" }}>
-                       Day
-                   </Text>
-               </TouchableOpacity>
+        <View style={styles.headerRow}>
+            {/* LEFT SIDE */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 30 }}>
+                <TouchableOpacity onPress={goToPrevious}>
+                    <Text style={[styles.arrow, { color: colors.text }]}>◀</Text>
+                </TouchableOpacity>
 
-               <TouchableOpacity onPress={() => setViewMode("month")}>
-                   <Text style={{ color: viewMode === "month" ? "#007AFF" : "#888" }}>
-                       Month
-                   </Text>
-               </TouchableOpacity>
-           </View>
-      
-         <Text style={[styles.dateHeader, { color: colors.text}]}>
-               {headerText}
-           </Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TouchableOpacity onPress={() => setViewMode("day")}>
+                        <Text style={{ color: viewMode === "day" ? "#007AFF" : "#888" }}>
+                        Day
+                        </Text>
+                    </TouchableOpacity>
 
-         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {/* Help button with (i) icon */}
-            <TouchableOpacity onPress={() => setInfoVisible(true)} style={styles.iconPadding}>
-                <Text style={{ fontSize: 22, color: colors.text}}>ⓘ</Text>
-            </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setViewMode("month")}>
+                        <Text style={{ color: viewMode === "month" ? "#007AFF" : "#888" }}>
+                        Month
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
-            <TouchableOpacity onPress={goToNext}>
-                <Text style={[styles.arrow, { color: colors.text}]}>▶</Text>
-            </TouchableOpacity>
-         </View>
-       </View>
-       {errorMessage && (
+            {/* CENTER (absolute) */}
+            <Text
+                pointerEvents="none"
+                style={[styles.dateHeader, { color: colors.text }]}
+            >
+                {headerText}
+            </Text>
+
+            {/* RIGHT SIDE */}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => setInfoVisible(true)} style={styles.iconPadding}>
+                <Text style={{ fontSize: 22, color: colors.text }}>ⓘ</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={goToNext}>
+                <Text style={[styles.arrow, { color: colors.text }]}>▶</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+        {errorMessage && (
             <View style={{
                 backgroundColor: "#ffe5e5",
                 borderLeftWidth: 4,
@@ -808,6 +815,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
+    position: "relative",
   },
   header: {
     fontSize: 24,
@@ -816,7 +824,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   arrow: { fontSize: 22, fontWeight: "bold" },
-  dateHeader: { fontSize: 20, fontWeight: "bold" },
+  dateHeader: { 
+    position: "absolute",
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "600", 
+},
   allDayContainer: { marginLeft: 70, marginBottom: 10 },
   allDayEvent: {
     backgroundColor: "rgba(0,122,255,0.15)",

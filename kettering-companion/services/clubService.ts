@@ -25,12 +25,28 @@ export class ClubService {
         ) as Club[];
     };
 
+    static getAllFitnessClasses = async (): Promise<Club[]> => {
+        const snapshot = await getDocs(collection(db, "fitnessClasses"));
+
+        return snapshot.docs.map(
+            doc => ({ id: doc.id, ...doc.data() })
+        ) as Club[];
+    };
+
     static getClub = async (id: string): Promise<Club | null> => {
         const ref = doc(db, "clubs", id);
         const snapshot = await getDoc(ref);
 
         if (!snapshot.exists()) return null;
 
+        return { id: snapshot.id, ...snapshot.data() } as Club;
+    };
+
+    static getFitnessClass = async (id: string): Promise<Club | null> => {
+        const ref = doc(db, "fitnessClasses", id);
+        const snapshot = await getDoc(ref);
+        
+        if (!snapshot.exists()) return null;
         return { id: snapshot.id, ...snapshot.data() } as Club;
     };
 
@@ -41,8 +57,20 @@ export class ClubService {
         await setDoc(doc(db, "clubs", club.id), club);
     };
 
+    static async createFitnessClass(club: Club) {
+        if (!club.id) {
+            throw new Error("Fitness class must have an id");
+        }
+        await setDoc(doc(db, "fitnessClasses", club.id), club);
+    };
+
     static async updateClub(id: string, data: Partial<Club>) {
         const ref = doc(db, "clubs", id);
+        await updateDoc(ref, data);
+    };
+
+    static async updateFitnessClass(id: string, data: Partial<Club>) {
+        const ref = doc(db, "fitnessClasses", id);
         await updateDoc(ref, data);
     };
 
@@ -62,6 +90,21 @@ export class ClubService {
         await deleteDoc(doc(db, "clubs", id));
     };
 
+    static async deleteFitnessClass(id: string) {
+        const q = query(
+            collection(db, "meetings"),
+            where("id", "==", id)
+        );
+
+        const snapshot = await getDocs(q);
+        
+        for (const meetingDoc of snapshot.docs) {
+            await deleteDoc(meetingDoc.ref);
+        }
+
+        await deleteDoc(doc(db, "fitnessClasses", id));
+    };
+
     static async addOfficer(id: string, uid: string) {
         const ref = doc(db, "clubs", id);
         await updateDoc(ref, {
@@ -69,8 +112,22 @@ export class ClubService {
         });
     };
 
+    static async addFitnessInstructor(id: string, uid: string) {
+        const ref = doc(db, "fitnessClasses", id);
+        await updateDoc(ref, {
+            officers: arrayUnion(uid)
+        });
+    };
+
     static async removeOfficer(id: string, uid: string) {
         const ref = doc(db, "clubs", id);
+        await updateDoc(ref, {
+            officers: arrayRemove(uid)
+        });
+    };
+
+    static async removeFitnessInstructor(id: string, uid: string) {
+        const ref = doc(db, "fitnessClasses", id);
         await updateDoc(ref, {
             officers: arrayRemove(uid)
         });

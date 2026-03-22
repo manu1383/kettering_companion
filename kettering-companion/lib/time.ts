@@ -1,3 +1,6 @@
+// Utility functions for time formatting and parsing, as well as date formatting and weekday handling
+
+// Converts 24-hour time to 12-hour format with AM/PM
 export function to12Hour(time?: string) {
   if (!time) return "";
 
@@ -8,7 +11,7 @@ export function to12Hour(time?: string) {
 
   return `${adjustedHour}:${minute.toString().padStart(2, "0")} ${period}`;
 }
-
+// Parses a time string in 12-hour format and converts it to 24-hour format
 export function parseTime(time: string): string | null {
   const match = time.trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
 
@@ -26,7 +29,7 @@ export function parseTime(time: string): string | null {
 
   return `${hours.toString().padStart(2, "0")}:${minutes}`;
 }
-
+// Array of weekday names for easy lookup
 export const WEEKDAYS = [
   "Sunday",
   "Monday",
@@ -36,11 +39,11 @@ export const WEEKDAYS = [
   "Friday",
   "Saturday"
 ];
-
+// Returns the name of the weekday given its numeric representation (0-6)
 export function getWeekdayName(day: number) {
   return WEEKDAYS[day] ?? "Unknown";
 }
-
+// Formats a frequency string (e.g. "weekly") into a more user-friendly format (e.g. "Weekly")
 export function formatFrequency(freq: string) {
   switch (freq) {
     case "weekly":
@@ -67,7 +70,7 @@ export function getPluralWeekday(weekday: number) {
 
   return days[weekday] ?? "";
 };
-
+// Formats a date string (YYYY-MM-DD) into a more readable format (e.g. "Monday, January 1, 2024")
 export function formatDate(dateString: string) {
   const [y, m, d] = dateString.split("-").map(Number);
   const date = new Date(y, m - 1, d);
