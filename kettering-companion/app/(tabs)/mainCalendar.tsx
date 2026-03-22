@@ -14,7 +14,7 @@ import {
     View
 } from "react-native";
 import { useTheme } from "../../constants/theme";
-import { MiniMap } from "./maps/MiniMap";
+import { MiniMap } from "../maps/MiniMap";
 
 
 WebBrowser.maybeCompleteAuthSession();

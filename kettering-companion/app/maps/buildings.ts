@@ -34,7 +34,7 @@ export const BUILDINGS: BuildingsType = {
         floors: [
             {
                 level: 1,
-                image: require("../../../assets/images/AcademicBuilding/Academic Building Level 1-page-00001.jpg"),
+                image: require("../../assets/images/AcademicBuilding/Academic Building Level 1-page-00001.jpg"),
                 imageWidth: 2100,
                 imageHeight: 1275,
                 rooms: {
@@ -129,7 +129,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 2,
-                image: require("../../../assets/images/AcademicBuilding/Academic Building level 2-page-00001.jpg"),
+                image: require("../../assets/images/AcademicBuilding/Academic Building level 2-page-00001.jpg"),
                 imageWidth: 2550,
                 imageHeight: 1650,
                 rooms: {
@@ -243,7 +243,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 3,
-                image: require("../../../assets/images/AcademicBuilding/Academic Building Level 3-page-00001.jpg"),
+                image: require("../../assets/images/AcademicBuilding/Academic Building Level 3-page-00001.jpg"),
                 rooms: {
                     AB3343: { x: 2069, y: 1597 },
                     AB3342: { x: 2173, y: 1481 },
@@ -297,7 +297,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 4,
-                image: require("../../../assets/images/AcademicBuilding/Academic Building Level 4-page-00001.jpg"),
+                image: require("../../assets/images/AcademicBuilding/Academic Building Level 4-page-00001.jpg"),
                 imageWidth: 2510,
                 imageHeight: 1610,
                 rooms: {
@@ -357,7 +357,7 @@ export const BUILDINGS: BuildingsType = {
         floors: [
             {
                 level: 1,
-                image: require("../../../assets/images/CampusCenter/Campus Center Level 1-page-00001.jpg"),
+                image: require("../../assets/images/CampusCenter/Campus Center Level 1-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {
@@ -367,7 +367,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 2,
-                image: require("../../../assets/images/CampusCenter/Campus Center Level 2-page-00001.jpg"),
+                image: require("../../assets/images/CampusCenter/Campus Center Level 2-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {
@@ -384,7 +384,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 3,
-                image: require("../../../assets/images/CampusCenter/Campus Center Level 3-page-00001.jpg"),
+                image: require("../../assets/images/CampusCenter/Campus Center Level 3-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {
@@ -404,7 +404,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 4,
-                image: require("../../../assets/images/CampusCenter/Campus Center Level 4-page-00001.jpg"),
+                image: require("../../assets/images/CampusCenter/Campus Center Level 4-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {
@@ -425,7 +425,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 5,
-                image: require("../../../assets/images/CampusCenter/Campus Center Level 5-page-00001.jpg"),
+                image: require("../../assets/images/CampusCenter/Campus Center Level 5-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {
@@ -454,7 +454,7 @@ export const BUILDINGS: BuildingsType = {
         floors: [
             {
                 level: 1,
-                image: require("../../../assets/images/LearningCommons/KU_LC_LEVEL1-page-00001.jpg"),
+                image: require("../../assets/images/LearningCommons/KU_LC_LEVEL1-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -467,7 +467,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 2,
-                image: require("../../../assets/images/LearningCommons/KU_LC_LEVEL2_JAN24-page-00001.jpg"),
+                image: require("../../assets/images/LearningCommons/KU_LC_LEVEL2_JAN24-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -482,7 +482,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 3,
-                image: require("../../../assets/images/LearningCommons/KU_LC_LEVEL3_JAN24-page-00001.jpg"),
+                image: require("../../assets/images/LearningCommons/KU_LC_LEVEL3_JAN24-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -498,7 +498,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 4,
-                image: require("../../../assets/images/LearningCommons/KU_LC_LEVEL4-page-00001.jpg"),
+                image: require("../../assets/images/LearningCommons/KU_LC_LEVEL4-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -528,7 +528,7 @@ export const BUILDINGS: BuildingsType = {
         floors: [
             {
                 level: 1,
-                image: require("../../../assets/images/MottCenter/Mott Center Level 1-page-00001.jpg"),
+                image: require("../../assets/images/MottCenter/Mott Center Level 1-page-00001.jpg"),
                 imageWidth: 5400,
                 imageHeight: 3600,
                 rooms: 
@@ -584,7 +584,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 2,
-                image: require("../../../assets/images/MottCenter/Mott Center Level 2-page-00001.jpg"),
+                image: require("../../assets/images/MottCenter/Mott Center Level 2-page-00001.jpg"),
                 imageWidth: 5400,
                 imageHeight: 3600,
                 rooms: 
@@ -670,7 +670,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 3,
-                image: require("../../../assets/images/MottCenter/Mott Center Level 3-page-00001.jpg"),
+                image: require("../../assets/images/MottCenter/Mott Center Level 3-page-00001.jpg"),
                 imageWidth: 5400,
                 imageHeight: 3600,
                 rooms: 
@@ -730,7 +730,7 @@ export const BUILDINGS: BuildingsType = {
         floors: [
             {
                 level: 1,
-                image: require("../../../assets/images/RecreationCenter/Recreation Center Level 1-page-00001.jpg"),
+                image: require("../../assets/images/RecreationCenter/Recreation Center Level 1-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -747,7 +747,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 2,
-                image: require("../../../assets/images/RecreationCenter/Recreation Center Level 2-page-00001.jpg"),
+                image: require("../../assets/images/RecreationCenter/Recreation Center Level 2-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -776,7 +776,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 3,
-                image: require("../../../assets/images/RecreationCenter/Recreation Center Level 3-page-00001.jpg"),
+                image: require("../../assets/images/RecreationCenter/Recreation Center Level 3-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -797,7 +797,7 @@ export const BUILDINGS: BuildingsType = {
         floors: [
             {
                 level: 1,
-                image: require("../../../assets/images/ThompsonHall/ThompsonHallBasement-page-00001.jpg"),
+                image: require("../../assets/images/ThompsonHall/ThompsonHallBasement-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -824,7 +824,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 2,
-                image: require("../../../assets/images/ThompsonHall/ThompsonHallLevel1-page-00001.jpg"),
+                image: require("../../assets/images/ThompsonHall/ThompsonHallLevel1-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -834,7 +834,7 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 3,
-                image: require("../../../assets/images/ThompsonHall/ThompsonHallLevel2-page-00001.jpg"),
+                image: require("../../assets/images/ThompsonHall/ThompsonHallLevel2-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: 
@@ -844,14 +844,14 @@ export const BUILDINGS: BuildingsType = {
             },
             {
                 level: 4,
-                image: require("../../../assets/images/ThompsonHall/ThompsonHallLevel3-page-00001.jpg"),
+                image: require("../../assets/images/ThompsonHall/ThompsonHallLevel3-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {},
             },
             {
                 level: 5,
-                image: require("../../../assets/images/ThompsonHall/ThompsonHallLevel4-page-00001.jpg"),
+                image: require("../../assets/images/ThompsonHall/ThompsonHallLevel4-page-00001.jpg"),
                 imageWidth: 1650,
                 imageHeight: 1275,
                 rooms: {},

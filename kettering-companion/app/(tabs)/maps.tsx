@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../constants/theme";
-import { BUILDINGS, ROOM_INDEX, validateRoom } from "./maps/buildings";
-import { useContainedImageLayout } from "./maps/useContainedImageLayout";
-import ZoomableImage from "./maps/ZoomableImage";
+import { BUILDINGS, ROOM_INDEX, validateRoom } from "../maps/buildings";
+import { useContainedImageLayout } from "../maps/useContainedImageLayout";
+import ZoomableImage from "../maps/ZoomableImage";
 
 type Layout = ReturnType<typeof useContainedImageLayout>;
 

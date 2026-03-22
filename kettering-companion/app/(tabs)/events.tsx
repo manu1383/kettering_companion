@@ -23,7 +23,17 @@ export default function EventsScreen() {
         useCallback(() => {
             const fetchEvents = async () => {
                 const data = await EventService.getAllEvents();
-                data.sort((a, b) => a.name.localeCompare(b.name));
+                data.sort((a, b) => {
+                    const aStart = a.schedule?.[0];
+                    const bStart = b.schedule?.[0];
+
+                    if (!aStart || !bStart) return 0;
+
+                    const aDateTime = new Date(`${aStart.startDate}T${aStart.startTime}`);
+                    const bDateTime = new Date(`${bStart.startDate}T${bStart.startTime}`);
+
+                    return aDateTime.getTime() - bDateTime.getTime();
+                });
                 setEvents(data);
                 setLoading(false);
             };
