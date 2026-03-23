@@ -1,4 +1,5 @@
 import { FormErrors, validateEntity } from "@/lib/validateEntity";
+import { OfficerService } from "@/services/OfficerService";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import ClubForm from "../../components/ClubForm";
@@ -72,7 +73,7 @@ export default function CreateClubScreen() {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
       if (userDoc) {
-        await ClubService.addOfficer(id, userDoc.id);
+        await OfficerService.addOfficer(id, userDoc.id);
       }
     }
 

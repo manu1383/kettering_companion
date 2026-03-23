@@ -1,10 +1,11 @@
+import ClubForm from "@/components/ClubForm";
 import { FormErrors, validateEntity } from "@/lib/validateEntity";
+import { ClubService } from "@/services/clubService";
+import { OfficerService } from "@/services/OfficerService";
+import { UserService } from "@/services/userService";
+import { Club } from "@/types/subscription";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import ClubForm from "../../components/ClubForm";
-import { ClubService } from "../../services/clubService";
-import { UserService } from "../../services/userService";
-import { Club } from "../../types/subscription";
 
 export default function CreateFitnessClassScreen() {
   // Router for navigation
@@ -70,7 +71,7 @@ export default function CreateFitnessClassScreen() {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
       if (userDoc) {
-        await ClubService.addFitnessInstructor(id, userDoc.id);
+        await OfficerService.addFitnessInstructor(id, userDoc.id);
       }
     }
 

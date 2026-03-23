@@ -1,5 +1,6 @@
 import { db } from "@/lib/firebase";
 import { formatDate, formatFrequency, getWeekdayName, to12Hour } from "@/lib/time";
+import { OfficerService } from "@/services/OfficerService";
 import { useLocalSearchParams } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
@@ -14,7 +15,6 @@ import {
 import { AuthContext } from "../../context/AuthProvider";
 import { copyCalendar } from "../../lib/copyCalendar";
 import { ClubService } from "../../services/clubService";
-import { UserService } from "../../services/userService";
 import { Club, Officer } from "../../types/subscription";
 
 export default function ClubDetailScreen() {
@@ -67,7 +67,7 @@ export default function ClubDetailScreen() {
 
         setClub(clubData);
         // Get officer details
-        const officerData = await UserService.getOfficersFromIds(
+        const officerData = await OfficerService.getOfficersFromIds(
           clubData.officers ?? []
         );
         setOfficers(officerData);

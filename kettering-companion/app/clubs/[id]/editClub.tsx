@@ -1,12 +1,13 @@
+import ClubForm from "@/components/ClubForm";
+import { to12Hour } from "@/lib/time";
 import { FormErrors, validateEntity } from "@/lib/validateEntity";
+import { ClubService } from "@/services/clubService";
+import { OfficerService } from "@/services/OfficerService";
+import { UserService } from "@/services/userService";
+import { Club } from "@/types/subscription";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
-import ClubForm from "../../../components/ClubForm";
-import { to12Hour } from "../../../lib/time";
-import { ClubService } from "../../../services/clubService";
-import { UserService } from "../../../services/userService";
-import { Club } from "../../../types/subscription";
 
 
 export default function EditClubScreen() {
@@ -74,7 +75,7 @@ export default function EditClubScreen() {
       const userDoc = await UserService.findUserByEmail(officerEmail);
 
       if (userDoc) {
-        await ClubService.addOfficer(values.id, userDoc.id);
+        await OfficerService.addOfficer(values.id, userDoc.id);
       }
     }
 
