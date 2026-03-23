@@ -1,7 +1,5 @@
 import { generateMeetingDates } from "@/lib/generateEvents";
 import {
-    arrayRemove,
-    arrayUnion,
     collection,
     deleteDoc,
     doc,
@@ -103,34 +101,6 @@ export class ClubService {
         }
 
         await deleteDoc(doc(db, "fitnessClasses", id));
-    };
-
-    static async addOfficer(id: string, uid: string) {
-        const ref = doc(db, "clubs", id);
-        await updateDoc(ref, {
-            officers: arrayUnion(uid)
-        });
-    };
-
-    static async addFitnessInstructor(id: string, uid: string) {
-        const ref = doc(db, "fitnessClasses", id);
-        await updateDoc(ref, {
-            officers: arrayUnion(uid)
-        });
-    };
-
-    static async removeOfficer(id: string, uid: string) {
-        const ref = doc(db, "clubs", id);
-        await updateDoc(ref, {
-            officers: arrayRemove(uid)
-        });
-    };
-
-    static async removeFitnessInstructor(id: string, uid: string) {
-        const ref = doc(db, "fitnessClasses", id);
-        await updateDoc(ref, {
-            officers: arrayRemove(uid)
-        });
     };
 
     static async createMeetings(club: any, meetings: any[]) {

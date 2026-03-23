@@ -1,6 +1,5 @@
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Officer } from "../types/subscription";
 
 export class UserService {
   static async findUserByEmail(email: string) {
@@ -11,26 +10,5 @@ export class UserService {
       const snapshot = await getDocs(q);
       if (snapshot.empty) return null;
       return snapshot.docs[0];
-  };
-
-  static async getOfficersFromIds(ids: string[]): Promise<Officer[]> {
-
-    const officers = await Promise.all(
-      ids.map(async (uid) => {
-
-        const userDoc = await getDoc(doc(db,"users",uid));
-
-        if (!userDoc.exists()) return null;
-
-        return {
-          uid,
-          ...(userDoc.data() as Omit<Officer,"uid">)
-        };
-
-      })
-    );
-
-    return officers.filter(Boolean) as Officer[];
-    
   };
 }

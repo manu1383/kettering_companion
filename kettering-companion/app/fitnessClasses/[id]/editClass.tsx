@@ -1,4 +1,5 @@
 import { FormErrors, validateEntity } from "@/lib/validateEntity";
+import { OfficerService } from "@/services/OfficerService";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
@@ -70,7 +71,7 @@ export default function EditFitnessClassScreen() {
     if (officerEmail) {
       const userDoc = await UserService.findUserByEmail(officerEmail);
       if (userDoc) {
-        await ClubService.addOfficer(values.id, userDoc.id);
+        await OfficerService.addOfficer(values.id, userDoc.id);
       }
     }
 
