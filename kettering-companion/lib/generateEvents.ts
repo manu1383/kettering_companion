@@ -21,13 +21,21 @@ export function generateMeetingDates(schedule: MeetingTime[]) {
     let end: Date;
     if (!rule.endDate) {
       end = new Date(start);
-      end.setMonth(end.getMonth() + 3); // default: 3 months
     } else {
       const [ey, em, ed] = rule.endDate.split("-").map(Number);
       end = new Date(ey, em - 1, ed);
     }
 
     const weekdays = rule.weekdays || [];
+
+    if (!weekdays.length && (!rule.frequency || rule.frequency === "never")) {
+      meetings.push({
+        date: new Date(start),
+        startTime: rule.startTime,
+        endTime: rule.endTime,
+      });
+      continue;
+    }
 
     if (!rule.frequency || rule.frequency === "never") {
       for (const day of weekdays) {

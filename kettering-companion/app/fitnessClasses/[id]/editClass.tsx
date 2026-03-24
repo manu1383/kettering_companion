@@ -71,7 +71,7 @@ export default function EditFitnessClassScreen() {
     if (officerEmail) {
       const userDoc = await UserService.findUserByEmail(officerEmail);
       if (userDoc) {
-        await OfficerService.addOfficer(values.id, userDoc.id);
+        await OfficerService.addFitnessInstructor(values.id, userDoc.id);
       }
     }
 

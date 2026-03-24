@@ -95,6 +95,7 @@ export class EventService {
 
     static async regenerateMeetings(event: Event) {
         const meetings = generateMeetingDates(event.schedule ?? []);
+        console.log("Generated meetings in regenerateMeetings: ", meetings);
         // Remove existing meetings for this club
         const snapshot = await getDocs(collection(db, "meetings"));
         for (const meetingDoc of snapshot.docs) {

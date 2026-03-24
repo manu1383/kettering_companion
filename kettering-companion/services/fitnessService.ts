@@ -27,6 +27,7 @@ export class FitnessService {
         await setDoc(doc(db, "intramurals", game.id), game);
 
         const meetings = generateMeetingDates(game.schedule ?? []);
+        console.log("Generated meetings: ", meetings);
         console.log("Game schedule: ", game.schedule);
         await FitnessService.createMeetings(game, meetings);
     };
@@ -67,6 +68,7 @@ export class FitnessService {
 
     static async regenerateMeetings(game: Intramural) {
         const meetings = generateMeetingDates(game.schedule ?? []);
+        console.log("Generated meetings in regenerateMeetings: ", meetings);
         // Remove existing meetings for this club
         const snapshot = await getDocs(collection(db, "meetings"));
         for (const meetingDoc of snapshot.docs) {
